@@ -89,7 +89,7 @@ impl StateVector for PositionVelocityCovarianceState {
         &self.state
     }
 
-    fn from_from_array(vec: Array1<f64>) -> Self {
+    fn form_from_array(vec: Array1<f64>) -> Self {
         Self { state: vec }
     }
 }
@@ -127,7 +127,7 @@ impl Mul<PositionVelocityCovarianceState> for Array2<f64> {
     type Output = PositionVelocityCovarianceState;
     fn mul(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
         let result = self.dot(rhs.get_vector());
-        PositionVelocityCovarianceState::from_from_array(result)
+        PositionVelocityCovarianceState::form_from_array(result)
     }
 }
 

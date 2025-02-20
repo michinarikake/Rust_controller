@@ -30,7 +30,7 @@ impl StateVector for PositionVelocityState {
         &self.state
     }
 
-    fn from_from_array(vec: Array1<f64>) -> Self {
+    fn form_from_array(vec: Array1<f64>) -> Self {
         Self { state: vec }
     }
 }
@@ -68,7 +68,7 @@ impl Mul<PositionVelocityState> for Array2<f64> {
     type Output = PositionVelocityState;
     fn mul(self, rhs: PositionVelocityState) -> PositionVelocityState {
         let result = self.dot(rhs.get_vector());
-        PositionVelocityState::from_from_array(result)
+        PositionVelocityState::form_from_array(result)
     }
 }
 

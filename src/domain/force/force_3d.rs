@@ -20,7 +20,7 @@ impl Force for Force3D {
         &self.force
     }
 
-    fn from_from_array(vec: Array1<f64>) -> Self {
+    fn form_from_array(vec: Array1<f64>) -> Self {
         Self { force: vec }
     }
 }
@@ -58,7 +58,7 @@ impl Mul<Force3D> for Array2<f64> {
     type Output = Force3D;
     fn mul(self, rhs: Force3D) -> Force3D {
         let result = self.dot(rhs.get_vector());
-        Force3D::from_from_array(result)
+        Force3D::form_from_array(result)
     }
 }
 
