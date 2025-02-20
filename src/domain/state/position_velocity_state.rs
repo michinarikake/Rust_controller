@@ -11,7 +11,7 @@ pub struct PositionVelocityState {
 }
 
 impl PositionVelocityState {
-    pub fn new(position: [f64; 3], velocity: [f64; 3]) -> Self {
+    pub fn form_from_list(position: [f64; 3], velocity: [f64; 3]) -> Self {
         let state = arr1(&[position[0], position[1], position[2], velocity[0], velocity[1], velocity[2]]);
         Self { state }
     }
@@ -30,7 +30,7 @@ impl StateVector for PositionVelocityState {
         &self.state
     }
 
-    fn from_array(vec: Array1<f64>) -> Self {
+    fn from_from_array(vec: Array1<f64>) -> Self {
         Self { state: vec }
     }
 }
@@ -68,15 +68,16 @@ impl Mul<PositionVelocityState> for Array2<f64> {
     type Output = PositionVelocityState;
     fn mul(self, rhs: PositionVelocityState) -> PositionVelocityState {
         let result = self.dot(rhs.get_vector());
-        PositionVelocityState::from_array(result)
+        PositionVelocityState::from_from_array(result)
     }
 }
 
+use ndarray::{arr2};
 /// **`PositionVelocityState` の基本演算テスト**
 #[test]
 fn test_position_velocity_state_operations() {
-    let pv_state1 = PositionVelocityState::new([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
-    let pv_state2 = PositionVelocityState::new([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
+    let pv_state1 = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let pv_state2 = PositionVelocityState::form_from_list([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
 
     // 加算
     let sum = pv_state1.clone() + pv_state2.clone();
@@ -93,4 +94,23 @@ fn test_position_velocity_state_operations() {
     // スカラー除算
     let divided = pv_state1.clone() / 2.0;
     assert_eq!(divided.get_vector(), &arr1(&[3500.0, 0.0, 0.0, 0.0, 3.75, 0.0]));
+}
+
+
+/// **行列 x `PositionVelocityState` の変換テスト**
+#[test]
+fn test_position_velocity_state_matrix_multiplication() {
+    let pv_state = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+
+    let transform_matrix = arr2(&[
+        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+    ]);
+
+    let transformed = transform_matrix * pv_state.clone();
+    assert_eq!(transformed.get_vector(), pv_state.get_vector());
 }
