@@ -39,14 +39,14 @@ impl StateVector for PositionVelocityState {
 impl Add for PositionVelocityState {
     type Output = PositionVelocityState;
     fn add(self, rhs: PositionVelocityState) -> PositionVelocityState {
-        self.add_vec(rhs)
+        self.add_vec(&rhs)
     }
 }
 
 impl Sub for PositionVelocityState {
     type Output = PositionVelocityState;
     fn sub(self, rhs: PositionVelocityState) -> PositionVelocityState {
-        self.sub_vec(rhs)
+        self.sub_vec(&rhs)
     }
 }
 

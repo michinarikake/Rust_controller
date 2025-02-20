@@ -98,14 +98,14 @@ impl StateVector for PositionVelocityCovarianceState {
 impl Add for PositionVelocityCovarianceState {
     type Output = PositionVelocityCovarianceState;
     fn add(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
-        self.add_vec(rhs)
+        self.add_vec(&rhs)
     }
 }
 
 impl Sub for PositionVelocityCovarianceState {
     type Output = PositionVelocityCovarianceState;
     fn sub(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
-        self.sub_vec(rhs)
+        self.sub_vec(&rhs)
     }
 }
 
