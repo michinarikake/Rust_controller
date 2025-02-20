@@ -11,6 +11,7 @@ pub trait Propagator<T: StateVector> {
 }
 
 /// **オイラー法**
+#[derive(Debug, Clone)]
 pub struct EulerPropagator;
 
 impl<T> Propagator<T> for EulerPropagator
@@ -24,6 +25,7 @@ where
 }
 
 /// **ルンゲクッタ4次**
+#[derive(Debug, Clone)]
 pub struct RungeKutta4Propagator;
 
 impl<T> Propagator<T> for RungeKutta4Propagator

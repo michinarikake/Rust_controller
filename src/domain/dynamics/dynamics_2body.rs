@@ -5,6 +5,7 @@ use crate::domain::state::position_velocity_state::PositionVelocityState;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 
 /// **二体問題の連続ダイナミクス**
+#[derive(Debug, Clone)]
 pub struct TwoBodyDynamics {
     mu: f64, // 地球の重力定数
 }
