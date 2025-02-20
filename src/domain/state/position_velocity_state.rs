@@ -23,6 +23,14 @@ impl PositionVelocityState {
     pub fn velocity(&self) -> Array1<f64> {
         self.state.slice(s![3..6]).to_owned()
     }
+
+    pub fn position_norm(&self) -> f64 {
+        (self.position().dot(&self.position())).sqrt()
+    }
+
+    pub fn velocity_norm(&self) -> f64 {
+        (self.velocity().dot(&self.velocity())).sqrt()
+    }
 }
 
 impl StateVector for PositionVelocityState {
