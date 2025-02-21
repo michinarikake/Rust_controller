@@ -80,6 +80,28 @@ impl Mul<PositionVelocityState> for Array2<f64> {
     }
 }
 
+impl Add<&PositionVelocityState> for PositionVelocityState {
+    type Output = PositionVelocityState;
+    fn add(self, rhs: &PositionVelocityState) -> PositionVelocityState {
+        self.add_vec(rhs)
+    }
+}
+
+impl Sub<&PositionVelocityState> for PositionVelocityState {
+    type Output = PositionVelocityState;
+    fn sub(self, rhs: &PositionVelocityState) -> PositionVelocityState {
+        self.sub_vec(rhs)
+    }
+}
+
+impl Mul<&PositionVelocityState> for Array2<f64> {
+    type Output = PositionVelocityState;
+    fn mul(self, rhs: &PositionVelocityState) -> PositionVelocityState {
+        let result = self.dot(rhs.get_vector());
+        PositionVelocityState::form_from_array(result)
+    }
+}
+
 use ndarray::{arr2};
 /// **`PositionVelocityState` の基本演算テスト**
 #[test]

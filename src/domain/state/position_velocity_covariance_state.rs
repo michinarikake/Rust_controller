@@ -2,15 +2,15 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use super::position_velocity_state::PositionVelocityState;
+use super::relative_position_velocity_state::RelativePositionVelocityState;
 
 // 位置・速度・共分散の状態量
 #[derive(Debug, Clone)]
-pub struct PositionVelocityCovarianceState {
+pub struct RelativePositionVelocityCovarianceState {
     state: Array1<f64>, // [l, mu_x(6), est_x(6), p(21)]
 }
 
-impl PositionVelocityCovarianceState {
+impl RelativePositionVelocityCovarianceState {
     pub fn form_from_list(l: f64, mu_x: [f64; 6], est_x: [f64; 6], p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
@@ -31,7 +31,7 @@ impl PositionVelocityCovarianceState {
         }
     }
 
-    pub fn from_from_states(l: f64, mu_x: &PositionVelocityState, est_x: &PositionVelocityState, p: Array2<f64>) -> Self {
+    pub fn from_from_states(l: f64, mu_x: &RelativePositionVelocityState, est_x: &RelativePositionVelocityState, p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
         let mut p_upper = Vec::with_capacity(21);
@@ -55,16 +55,16 @@ impl PositionVelocityCovarianceState {
         self.state[0]
     }
 
-    pub fn get_mu_x(&self) -> PositionVelocityState {
+    pub fn get_mu_x(&self) -> RelativePositionVelocityState {
         let position: [f64; 3] = self.state.slice(s![1..4]).to_owned().to_vec().try_into().unwrap();
         let velocity: [f64; 3] = self.state.slice(s![4..7]).to_owned().to_vec().try_into().unwrap();
-        PositionVelocityState::form_from_list(position, velocity)
+        RelativePositionVelocityState::form_from_list(position, velocity)
     }
 
-    pub fn get_est_x(&self) -> PositionVelocityState {
+    pub fn get_est_x(&self) -> RelativePositionVelocityState {
         let position: [f64; 3] = self.state.slice(s![7..10]).to_owned().to_vec().try_into().unwrap();
         let velocity: [f64; 3] = self.state.slice(s![10..13]).to_owned().to_vec().try_into().unwrap();
-        PositionVelocityState::form_from_list(position, velocity)
+        RelativePositionVelocityState::form_from_list(position, velocity)
     }
 
     pub fn get_covariance_matrix(&self) -> Array2<f64> {
@@ -84,7 +84,7 @@ impl PositionVelocityCovarianceState {
 }
 
 
-impl StateVector for PositionVelocityCovarianceState {
+impl StateVector for RelativePositionVelocityCovarianceState {
     fn get_vector(&self) -> &Array1<f64> {
         &self.state
     }
@@ -95,43 +95,65 @@ impl StateVector for PositionVelocityCovarianceState {
 }
 
 /// **演算子のオーバーロード**
-impl Add for PositionVelocityCovarianceState {
-    type Output = PositionVelocityCovarianceState;
-    fn add(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
+impl Add for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn add(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for PositionVelocityCovarianceState {
-    type Output = PositionVelocityCovarianceState;
-    fn sub(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
+impl Sub for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn sub(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for PositionVelocityCovarianceState {
-    type Output = PositionVelocityCovarianceState;
-    fn mul(self, scalar: f64) -> PositionVelocityCovarianceState {
+impl Mul<f64> for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn mul(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for PositionVelocityCovarianceState {
-    type Output = PositionVelocityCovarianceState;
-    fn div(self, scalar: f64) -> PositionVelocityCovarianceState {
+impl Div<f64> for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn div(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<PositionVelocityCovarianceState> for Array2<f64> {
-    type Output = PositionVelocityCovarianceState;
-    fn mul(self, rhs: PositionVelocityCovarianceState) -> PositionVelocityCovarianceState {
+impl Mul<RelativePositionVelocityCovarianceState> for Array2<f64> {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn mul(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
         let result = self.dot(rhs.get_vector());
-        PositionVelocityCovarianceState::form_from_array(result)
+        RelativePositionVelocityCovarianceState::form_from_array(result)
     }
 }
 
-/// **`PositionVelocityCovarianceState` の共分散行列のテスト**
+impl Add<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn add(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+        self.add_vec(rhs)
+    }
+}
+
+impl Sub<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn sub(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+        self.sub_vec(rhs)
+    }
+}
+
+impl Mul<&RelativePositionVelocityCovarianceState> for Array2<f64> {
+    type Output = RelativePositionVelocityCovarianceState;
+    fn mul(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+        let result = self.dot(rhs.get_vector());
+        RelativePositionVelocityCovarianceState::form_from_array(result)
+    }
+}
+
+/// **`RelativePositionVelocityCovarianceState` の共分散行列のテスト**
 use ndarray::{arr2};
 #[test]
 fn test_position_velocity_covariance_state() {
@@ -144,10 +166,10 @@ fn test_position_velocity_covariance_state() {
         [0.05, 0.09, 0.12, 0.14, 0.15, 0.6],
     ]);
 
-    let mu_x = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
-    let est_x = PositionVelocityState::form_from_list([6999.0, 0.0, 0.1], [0.0, 7.49, 0.1]);
+    let mu_x = RelativePositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let est_x = RelativePositionVelocityState::form_from_list([6999.0, 0.0, 0.1], [0.0, 7.49, 0.1]);
 
-    let pvc_state = PositionVelocityCovarianceState::from_from_states(1.0, &mu_x, &est_x, p_full.clone());
+    let pvc_state = RelativePositionVelocityCovarianceState::from_from_states(1.0, &mu_x, &est_x, p_full.clone());
 
     assert_eq!(pvc_state.get_l(), 1.0);
     assert_eq!(pvc_state.get_mu_x().get_vector(), mu_x.get_vector());
