@@ -131,27 +131,27 @@ impl Mul<RelativePositionVelocityCovarianceState> for Array2<f64> {
     }
 }
 
-impl Add<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn add(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
-        self.add_vec(rhs)
-    }
-}
+// impl Add<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
+//     type Output = RelativePositionVelocityCovarianceState;
+//     fn add(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+//         self.add_vec(rhs)
+//     }
+// }
 
-impl Sub<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn sub(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
-        self.sub_vec(rhs)
-    }
-}
+// impl Sub<&RelativePositionVelocityCovarianceState> for RelativePositionVelocityCovarianceState {
+//     type Output = RelativePositionVelocityCovarianceState;
+//     fn sub(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+//         self.sub_vec(rhs)
+//     }
+// }
 
-impl Mul<&RelativePositionVelocityCovarianceState> for Array2<f64> {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn mul(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
-        let result = self.dot(rhs.get_vector());
-        RelativePositionVelocityCovarianceState::form_from_array(result)
-    }
-}
+// impl Mul<&RelativePositionVelocityCovarianceState> for Array2<f64> {
+//     type Output = RelativePositionVelocityCovarianceState;
+//     fn mul(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+//         let result = self.dot(rhs.get_vector());
+//         RelativePositionVelocityCovarianceState::form_from_array(result)
+//     }
+// }
 
 /// **`RelativePositionVelocityCovarianceState` の共分散行列のテスト**
 use ndarray::{arr2};

@@ -88,27 +88,27 @@ impl Mul<RelativePositionVelocityState> for Array2<f64> {
     }
 }
 
-impl Add<&RelativePositionVelocityState> for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn add(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
-        self.add_vec(rhs)
-    }
-}
+// impl Add<&RelativePositionVelocityState> for RelativePositionVelocityState {
+//     type Output = RelativePositionVelocityState;
+//     fn add(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
+//         self.add_vec(rhs)
+//     }
+// }
 
-impl Sub<&RelativePositionVelocityState> for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn sub(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
-        self.sub_vec(rhs)
-    }
-}
+// impl Sub<&RelativePositionVelocityState> for RelativePositionVelocityState {
+//     type Output = RelativePositionVelocityState;
+//     fn sub(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
+//         self.sub_vec(rhs)
+//     }
+// }
 
-impl Mul<&RelativePositionVelocityState> for Array2<f64> {
-    type Output = RelativePositionVelocityState;
-    fn mul(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
-        let result = self.dot(rhs.get_vector());
-        RelativePositionVelocityState::form_from_array(result)
-    }
-}
+// impl Mul<&RelativePositionVelocityState> for Array2<f64> {
+//     type Output = RelativePositionVelocityState;
+//     fn mul(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
+//         let result = self.dot(rhs.get_vector());
+//         RelativePositionVelocityState::form_from_array(result)
+//     }
+// }
 
 use ndarray::{arr2};
 /// **`RelativePositionVelocityState` の基本演算テスト**
