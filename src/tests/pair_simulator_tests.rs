@@ -33,7 +33,7 @@ fn pair_state_simulation_test() {
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
     let dynamics = PairTwoBodyDynamics::new(mu);
     let propagator = RungeKutta4Propagator;
-    let dt = 0.10;
+    let dt = 1.0;
 
     let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt);
 

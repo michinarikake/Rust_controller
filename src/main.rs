@@ -30,12 +30,12 @@ fn main() {
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
     let dynamics = PairTwoBodyDynamics::new(mu);
     let propagator = RungeKutta4Propagator;
-    let dt = 0.10;
+    let dt = 1.0;
 
     let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt);
 
     // シミュレーション実行
-    for step in 0..10000 {
+    for step in 0..100000 {
         simulator.update(&external_force);
 
         // 同じタイムステップのデータを一行にまとめる
