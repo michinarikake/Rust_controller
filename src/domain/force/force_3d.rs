@@ -2,6 +2,7 @@ use ndarray::{Array1, Array2, arr1};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::force_trait::Force;
+use crate::repositry::loggable::Loggable;
 
 #[derive(Debug, Clone)]
 pub struct Force3D{
@@ -22,6 +23,17 @@ impl Force for Force3D {
 
     fn form_from_array(vec: Array1<f64>) -> Self {
         Self { force: vec }
+    }
+}
+
+impl Loggable for Force3D {
+    fn header(&self) -> String {
+        "fx,fy,fz".to_string()
+    }
+
+    fn output_log(&self) -> String {
+        let force_str: Vec<String> = self.get_vector().iter().map(|v| v.to_string()).collect();
+        force_str.join(",")
     }
 }
 

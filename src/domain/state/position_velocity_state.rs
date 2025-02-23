@@ -2,6 +2,7 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
+use crate::repositry::loggable::Loggable;
 
 
 // 位置・速度の状態量
@@ -40,6 +41,17 @@ impl StateVector for PositionVelocityState {
 
     fn form_from_array(vec: Array1<f64>) -> Self {
         Self { state: vec }
+    }
+}
+
+impl Loggable for PositionVelocityState{
+    fn output_log(&self) -> String {
+        let state_str : Vec<String> = self.get_vector().iter().map(|v| v.to_string()).collect();
+        state_str.join(",")
+    }
+
+    fn header(&self) -> String {
+        "px,py,pz,vx,vy,vz".to_string()
     }
 }
 

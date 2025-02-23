@@ -3,6 +3,7 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
 use super::relative_position_velocity_state::RelativePositionVelocityState;
+use crate::repositry::loggable::Loggable;
 
 // 位置・速度・共分散の状態量
 #[derive(Debug, Clone)]
@@ -91,6 +92,27 @@ impl StateVector for RelativePositionVelocityCovarianceState {
 
     fn form_from_array(vec: Array1<f64>) -> Self {
         Self { state: vec }
+    }
+
+}
+
+impl Loggable for RelativePositionVelocityCovarianceState{
+    fn header(&self) -> String {
+        let mu_headers: Vec<String> = (0..6).map(|i| format!("mu_x_{}", i)).collect();
+        let est_headers: Vec<String> = (0..6).map(|i| format!("est_x_{}", i)).collect();
+        let p_headers: Vec<String> = (0..21).map(|i| format!("p_{}", i)).collect();
+
+        format!("l,{}, {}, {}", mu_headers.join(","), est_headers.join(","), p_headers.join(","))
+    }
+
+    /// **ログの出力**
+    fn output_log(&self) -> String {
+        let l = self.get_l();
+        let mu_x = self.get_mu_x().get_vector().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
+        let est_x = self.get_est_x().get_vector().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
+        let covariance = self.get_covariance_matrix().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
+
+        format!("{},{},{},{}", l, mu_x, est_x, covariance)
     }
 }
 
