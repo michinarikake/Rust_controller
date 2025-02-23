@@ -5,18 +5,18 @@ use super::force_trait::Force;
 use crate::repositry::loggable_trait::Loggable;
 
 #[derive(Debug, Clone)]
-pub struct Force3dEcef{
+pub struct Force3dEci{
     force: Array1<f64>
 }
 
-impl Force3dEcef{
+impl Force3dEci{
     pub fn form_from_list(force_list: [f64;3]) -> Self {
         let force = arr1(&[force_list[0], force_list[1], force_list[2]]);
         Self {force}
     }
 }
 
-impl Force for Force3dEcef {
+impl Force for Force3dEci {
     fn get_vector(&self) -> &Array1<f64> {
         &self.force
     }
@@ -26,7 +26,7 @@ impl Force for Force3dEcef {
     }
 }
 
-impl Loggable for Force3dEcef {
+impl Loggable for Force3dEci {
     fn header(&self) -> String {
         "f0,f1,f2".to_string()
     }
@@ -38,48 +38,48 @@ impl Loggable for Force3dEcef {
 }
 
 /// **演算子のオーバーロード**
-impl Add for Force3dEcef {
-    type Output = Force3dEcef;
-    fn add(self, rhs: Force3dEcef) -> Force3dEcef {
+impl Add for Force3dEci {
+    type Output = Force3dEci;
+    fn add(self, rhs: Force3dEci) -> Force3dEci {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for Force3dEcef {
-    type Output = Force3dEcef;
-    fn sub(self, rhs: Force3dEcef) -> Force3dEcef {
+impl Sub for Force3dEci {
+    type Output = Force3dEci;
+    fn sub(self, rhs: Force3dEci) -> Force3dEci {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for Force3dEcef {
-    type Output = Force3dEcef;
-    fn mul(self, scalar: f64) -> Force3dEcef {
+impl Mul<f64> for Force3dEci {
+    type Output = Force3dEci;
+    fn mul(self, scalar: f64) -> Force3dEci {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for Force3dEcef {
-    type Output = Force3dEcef;
-    fn div(self, scalar: f64) -> Force3dEcef {
+impl Div<f64> for Force3dEci {
+    type Output = Force3dEci;
+    fn div(self, scalar: f64) -> Force3dEci {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<Force3dEcef> for Array2<f64> {
-    type Output = Force3dEcef;
-    fn mul(self, rhs: Force3dEcef) -> Force3dEcef {
+impl Mul<Force3dEci> for Array2<f64> {
+    type Output = Force3dEci;
+    fn mul(self, rhs: Force3dEci) -> Force3dEci {
         let result = self.dot(rhs.get_vector());
-        Force3dEcef::form_from_array(result)
+        Force3dEci::form_from_array(result)
     }
 }
 
 use ndarray::{arr2};
 
 #[test]
-fn test_Force3dEcef_operations() {
-    let f1 = Force3dEcef::form_from_list([1.0, 2.0, 3.0]);
-    let f2 = Force3dEcef::form_from_list([0.5, -1.0, 2.0]);
+fn test_Force3dEci_operations() {
+    let f1 = Force3dEci::form_from_list([1.0, 2.0, 3.0]);
+    let f2 = Force3dEci::form_from_list([0.5, -1.0, 2.0]);
 
     // 加算
     let sum = f1.clone() + f2.clone();
@@ -99,8 +99,8 @@ fn test_Force3dEcef_operations() {
 }
 
 #[test]
-fn test_Force3dEcef_matrix_multiplication() {
-    let f = Force3dEcef::form_from_list([1.0, 2.0, 3.0]);
+fn test_Force3dEci_matrix_multiplication() {
+    let f = Force3dEci::form_from_list([1.0, 2.0, 3.0]);
 
     let transform_matrix = arr2(&[
         [2.0, 0.0, 0.0],

@@ -2,7 +2,7 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use super::position_velocity_state_ecef::PositionVelocityStateEcef;
+use super::position_velocity_state_eci::PositionVelocityStateEci;
 use crate::repositry::loggable_trait::Loggable;
 
 
@@ -18,7 +18,7 @@ impl PositionVelocityStateLvlh {
         Self { state }
     }
 
-    pub fn form_from_states(state_base: &PositionVelocityStateEcef, state_target: &PositionVelocityStateEcef) -> Self {
+    pub fn form_from_states(state_base: &PositionVelocityStateEci, state_target: &PositionVelocityStateEci) -> Self {
         Self::form_from_array((state_target - state_base).get_vector().clone())
     }
 
@@ -124,6 +124,8 @@ impl Mul<PositionVelocityStateLvlh> for Array2<f64> {
         PositionVelocityStateLvlh::form_from_array(result)
     }
 }
+
+#[cfg(test)]
 use ndarray::{arr2};
 /// **`PositionVelocityStateLvlh` の基本演算テスト**
 #[test]
@@ -169,8 +171,8 @@ fn test_position_velocity_state_matrix_multiplication() {
 
 #[test]
 fn test_form_from_states() {
-    let base = PositionVelocityStateEcef::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.0, 0.0]);
-    let target = PositionVelocityStateEcef::form_from_list([7100.0, 100.0, 0.0], [0.1, 8.0, 0.0]);
+    let base = PositionVelocityStateEci::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.0, 0.0]);
+    let target = PositionVelocityStateEci::form_from_list([7100.0, 100.0, 0.0], [0.1, 8.0, 0.0]);
 
     let relative = PositionVelocityStateLvlh::form_from_states(&base, &target);
 

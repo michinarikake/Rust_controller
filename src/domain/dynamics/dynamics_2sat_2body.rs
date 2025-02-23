@@ -1,8 +1,8 @@
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
-use crate::domain::state::position_velocity_pair_state_ecef::PositionVelocityPairStateEcef;
+use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
-use crate::domain::force::force_3d_ecef::Force3dEcef;
+use crate::domain::force::force_3d_eci::Force3dEci;
 
 /// **二体問題の連続ダイナミクス**
 #[derive(Debug, Clone)]
@@ -16,8 +16,8 @@ impl PairTwoBodyDynamics {
     }
 }
 
-impl ContinuousDynamics<PositionVelocityPairStateEcef, Force3dEcef> for PairTwoBodyDynamics {
-    fn compute_derivative(&self, state: &PositionVelocityPairStateEcef, input: &Force3dEcef) -> PositionVelocityPairStateEcef {
+impl ContinuousDynamics<PositionVelocityPairStateEci, Force3dEci> for PairTwoBodyDynamics {
+    fn compute_derivative(&self, state: &PositionVelocityPairStateEci, input: &Force3dEci) -> PositionVelocityPairStateEci {
         let r_vec_chief = state.chief().position();
         let v_vec_chief = state.chief().velocity();
         let r_norm_chief = state.chief().position_norm();
@@ -28,6 +28,6 @@ impl ContinuousDynamics<PositionVelocityPairStateEcef, Force3dEcef> for PairTwoB
         let r_norm_deputy = state.deputy().position_norm();
         let a_vec_deputy = -self.mu / (r_norm_deputy.powi(3)) * r_vec_deputy + input.get_vector();
 
-        PositionVelocityPairStateEcef::form_from_array(ndarray::concatenate![ndarray::Axis(0), v_vec_chief, a_vec_chief, v_vec_deputy, a_vec_deputy])
+        PositionVelocityPairStateEci::form_from_array(ndarray::concatenate![ndarray::Axis(0), v_vec_chief, a_vec_chief, v_vec_deputy, a_vec_deputy])
     }
 }

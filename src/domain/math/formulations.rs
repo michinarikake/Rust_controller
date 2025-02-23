@@ -1,4 +1,5 @@
 use ndarray::{Array1, Array2, arr1, arr2, concatenate, Axis, s};
+use ndarray_linalg::Inverse;
 
 pub struct Math {}
 
@@ -15,7 +16,7 @@ impl Math {
     }
 
     /// **ECI (慣性座標系) → Lvlh 座標系の変換行列を計算**
-    pub fn mat_ecef2lvlh(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
+    pub fn mat_eci2lvlh(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
         let r_norm = position.dot(position).sqrt();
         let h = Math::cross_product(position, velocity);
         let h_norm = h.dot(&h).sqrt();
@@ -31,6 +32,10 @@ impl Math {
         ])
     }
 
+    pub fn mat_lvlh2eci(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
+        Math::mat_eci2lvlh(position, velocity).into_owned().inv().expect("Matrix inversion failed")
+    }
+
     /// **Lvlh座標系へ変換**
     pub fn convert_to_lvlh(chief_state: &Array1<f64>, deputy_state: &Array1<f64>) -> Array1<f64> {
         assert!(chief_state.len() == 6 && deputy_state.len() == 6, "State vectors must be of length 6.");
@@ -40,7 +45,7 @@ impl Math {
         let v_rel_eci = deputy_state.slice(s![3..6]).to_owned() - chief_state.slice(s![3..6]).to_owned();
 
         // **ECI → Lvlh 変換行列**
-        let transform_matrix = Math::mat_ecef2lvlh(
+        let transform_matrix = Math::mat_eci2lvlh(
             &chief_state.slice(s![0..3]).to_owned(),
             &chief_state.slice(s![3..6]).to_owned(),
         );
@@ -60,5 +65,30 @@ impl Math {
 
         // **変換後の状態を返す**
         concatenate![Axis(0), r_lvlh, v_lvlh]
+    }
+
+    pub fn pqw_to_eci_matrix(i_rad: f64, omega_rad: f64, Omega_rad: f64) -> Array2<f64> {
+        let cos_Omega = Omega_rad.cos();
+        let sin_Omega = Omega_rad.sin();
+        let cos_i = i_rad.cos();
+        let sin_i = i_rad.sin();
+        let cos_omega = omega_rad.cos();
+        let sin_omega = omega_rad.sin();
+
+        Array2::from_shape_vec(
+            (3, 3),
+            vec![
+                cos_Omega * cos_omega - sin_Omega * sin_omega * cos_i,
+                -cos_Omega * sin_omega - sin_Omega * cos_omega * cos_i,
+                sin_Omega * sin_i,
+                sin_Omega * cos_omega + cos_Omega * sin_omega * cos_i,
+                -sin_Omega * sin_omega + cos_Omega * cos_omega * cos_i,
+                -cos_Omega * sin_i,
+                sin_omega * sin_i,
+                cos_omega * sin_i,
+                cos_i,
+            ],
+        )
+        .unwrap()
     }
 }

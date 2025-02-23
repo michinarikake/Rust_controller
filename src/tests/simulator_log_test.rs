@@ -1,10 +1,9 @@
-use satellite_simulator::application::simulator::simulator::Simulator;
-use satellite_simulator::repositry::logger::Logger;
-use satellite_simulator::domain::dynamics::propagator::RungeKutta4Propagator;
-use satellite_simulator::domain::dynamics::dynamics_hcw::HcwDynamics;
-use satellite_simulator::domain::state::relative_position_velocity_state::PositionVelocityStateLvlh;
-use satellite_simulator::domain::force::force_3d::Force3dLvlh;
-use chrono::Local;
+use crate::application::simulator::simulator::Simulator;
+use crate::repositry::logger::Logger;
+use crate::domain::dynamics::propagator::RungeKutta4Propagator;
+use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
+use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use std::process::Command;
 use std::env;
 

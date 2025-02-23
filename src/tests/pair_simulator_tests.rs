@@ -1,18 +1,21 @@
-use satellite_simulator::application::simulator::simulator::Simulator;
-use satellite_simulator::repositry::logger::Logger;
-use satellite_simulator::domain::dynamics::propagator::RungeKutta4Propagator;
-use satellite_simulator::domain::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
-use satellite_simulator::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
-use satellite_simulator::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
-use satellite_simulator::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use satellite_simulator::domain::state::orbital_elements::OrbitalElements;
-use satellite_simulator::domain::state::state_trait::StateVector;
-use satellite_simulator::domain::force::force_3d_eci::Force3dEci;
+use ndarray::{Array1, Array2, arr1, arr2, concatenate, Axis, s};
+use ndarray_linalg::Inverse;
+use crate::application::simulator::simulator::Simulator;
+use crate::domain::state::state_trait::StateVector;
+use crate::repositry::logger::Logger;
+use crate::domain::dynamics::propagator::RungeKutta4Propagator;
+use crate::domain::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
+use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::domain::state::orbital_elements::OrbitalElements;
+use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::domain::force::force_3d_eci::Force3dEci;
 use chrono::Local;
 use std::process::Command;
 use std::env;
 
-fn main() {
+
+#[test]
+fn pair_state_simulation_test() {
     let log_filename = "pair_state_simulation_log.csv";
 
     // ロガーの作成

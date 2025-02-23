@@ -29,6 +29,9 @@ def read_log_and_plot(log_filename):
     # **3D プロット (p0, p1, p2)**
     plot_3d_trajectory(steps, positions, os.path.join(plot_dir, "3D_Trajectory.png"))
 
+    # **2D プロット (p0, p1, p2)**
+    plot_2d_data(steps, positions, ["Position X", "Position Y", "Position Z"], "Position Over Time", os.path.join(plot_dir, "Position_Plot.png"))
+
     # **2D プロット (v0, v1, v2)**
     plot_2d_data(steps, velocities, ["Velocity X", "Velocity Y", "Velocity Z"], "Velocity Over Time", os.path.join(plot_dir, "Velocity_Plot.png"))
 
