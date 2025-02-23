@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use crate::domain::dynamics::propagator::{Propagator, EulerPropagator, RungeKutta4Propagator};
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::state::state_trait::StateVector;
@@ -13,29 +15,29 @@ where
     propagator: P,
     dynamics: D,
     state: T,
-    input: U,
     dt: f64,
+    _marker: PhantomData<U>,
 }
 
 impl<T, U, P, D> Simulator<T, U, P, D>
 where
     T: StateVector + Clone,
-    U: Force + Clone,
+    U: Force,
     P: Propagator<T, U>,
     D: ContinuousDynamics<T, U>,
 {
-    pub fn new(propagator: P, dynamics: D, initial_state: T, input: U, dt: f64) -> Self {
+    pub fn new(propagator: P, dynamics: D, initial_state: T, dt: f64) -> Self {
         Self {
             propagator,
             dynamics,
             state: initial_state,
-            input,
             dt,
+            _marker: PhantomData,
         }
     }
 
-    pub fn update(&mut self) {
-        self.state = self.propagator.propagate_continuous(&self.state, &self.input, &self.dynamics, self.dt);
+    pub fn update(&mut self, input: &U) {
+        self.state = self.propagator.propagate_continuous(&self.state, input, &self.dynamics, self.dt);
     }
 
     pub fn get_state(&self) -> &T {
@@ -58,10 +60,10 @@ fn test_hcw_dynamics_with_rk4() {
     let propagator = RungeKutta4Propagator;
     let dt = 60.0; // タイムステップ（秒）
 
-    let mut simulator = Simulator::new(propagator, dynamics, initial_state, external_force, dt);
+    let mut simulator = Simulator::new(propagator, dynamics, initial_state, dt);
 
     for _ in 0..10 {
-        simulator.update();
+        simulator.update(&external_force);
     }
 
     let final_state = simulator.get_state().get_vector();

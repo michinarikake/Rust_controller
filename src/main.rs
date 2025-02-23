@@ -22,11 +22,11 @@ fn main() {
     let propagator = RungeKutta4Propagator;
     let dt = 10.0;
 
-    let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), external_force.clone(), dt);
+    let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt);
 
     // シミュレーション実行
     for step in 0..1000 {
-        simulator.update();
+        simulator.update(&external_force);
 
         // 同じタイムステップのデータを一行にまとめる
         logger.add_entry(simulator.get_state().clone());
