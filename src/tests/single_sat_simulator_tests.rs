@@ -4,10 +4,9 @@ use crate::application::simulator::simulator::Simulator;
 use crate::domain::state::state_trait::StateVector;
 use crate::repositry::logger::Logger;
 use crate::domain::dynamics::propagator::RungeKutta4Propagator;
-use crate::domain::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
-use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
-use crate::domain::state::orbital_elements::OrbitalElements;
+use crate::domain::dynamics::dynamics_2body::TwoBodyDynamics;
 use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::domain::state::orbital_elements::OrbitalElements;
 use crate::domain::force::force_3d_eci::Force3dEci;
 use chrono::Local;
 use std::process::Command;
@@ -15,8 +14,8 @@ use std::env;
 
 
 #[test]
-fn pair_state_simulation_test() {
-    let log_filename = "pair_state_simulation_log.csv";
+fn single_state_simulation_test() {
+    let log_filename = "single_simulation_log.csv";
 
     // ロガーの作成
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
@@ -24,21 +23,17 @@ fn pair_state_simulation_test() {
     // 初期状態
     let mu = 3.986004 * 10f64.powi(14);
     let oe1 = OrbitalElements::form_from_elements(6928000.0, 0.001, 1.57079633, 0.0, 0.28869219, 0.0).unwrap();
-    let oe2 = OrbitalElements::form_from_elements(6928000.0, 0.001, 1.57079733, 0.0, 0.28869219, 0.0).unwrap();
-    let initial_state1 = PositionVelocityStateEci::form_from_orbital_elements(&oe1, mu);
-    let initial_state2 = PositionVelocityStateEci::form_from_orbital_elements(&oe2, mu);
-    println!("{}", initial_state1.get_vector());
-    println!("{}", initial_state2.get_vector());
-    let initial_state = PositionVelocityPairStateEci::form_from_state(initial_state1, initial_state2);
+    let initial_state = PositionVelocityStateEci::form_from_orbital_elements(&oe1, mu);
+    println!("{}", initial_state.get_vector());
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
-    let dynamics = PairTwoBodyDynamics::new(mu);
+    let dynamics = TwoBodyDynamics::new(mu);
     let propagator = RungeKutta4Propagator;
-    let dt = 0.1;
+    let dt = 1.0;
 
     let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt);
 
     // シミュレーション実行
-    for step in 0..100000 {
+    for step in 0..10000 {
         simulator.update(&external_force);
 
         // 同じタイムステップのデータを一行にまとめる
@@ -51,7 +46,7 @@ fn pair_state_simulation_test() {
     logger.flush();
 
     let date_str = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let log_filename = format!("data/{}/{}_pair_state_simulation_log.csv", date_str, date_str);
+    let log_filename = format!("data/{}/{}_single_simulation_log.csv", date_str, date_str);
     
     // **プロジェクトのルートパスを取得**
     let current_dir = env::current_dir().expect("Failed to get current directory");

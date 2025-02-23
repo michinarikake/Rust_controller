@@ -26,9 +26,9 @@ impl Math {
         let v_hat = Math::cross_product(&h_hat, &r_hat);
 
         arr2(&[
-            [r_hat[0], v_hat[0], h_hat[0]],
-            [r_hat[1], v_hat[1], h_hat[1]],
-            [r_hat[2], v_hat[2], h_hat[2]],
+            [r_hat[0], r_hat[1], r_hat[2]],
+            [v_hat[0], v_hat[1], v_hat[2]],
+            [h_hat[0], h_hat[1], h_hat[2]],
         ])
     }
 
@@ -65,6 +65,7 @@ impl Math {
 
         // **変換後の状態を返す**
         concatenate![Axis(0), r_lvlh, v_lvlh]
+        // concatenate![Axis(0), r_rel_eci, v_rel_eci]
     }
 
     pub fn pqw_to_eci_matrix(i_rad: f64, omega_rad: f64, Omega_rad: f64) -> Array2<f64> {
