@@ -14,7 +14,7 @@ impl Math {
         ])
     }
 
-    /// **ECI (慣性座標系) → LVLH 座標系の変換行列を計算**
+    /// **ECI (慣性座標系) → Lvlh 座標系の変換行列を計算**
     pub fn mat_ecef2lvlh(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
         let r_norm = position.dot(position).sqrt();
         let h = Math::cross_product(position, velocity);
@@ -31,7 +31,7 @@ impl Math {
         ])
     }
 
-    /// **LVLH座標系へ変換**
+    /// **Lvlh座標系へ変換**
     pub fn convert_to_lvlh(chief_state: &Array1<f64>, deputy_state: &Array1<f64>) -> Array1<f64> {
         assert!(chief_state.len() == 6 && deputy_state.len() == 6, "State vectors must be of length 6.");
 
@@ -39,7 +39,7 @@ impl Math {
         let r_rel_eci = deputy_state.slice(s![0..3]).to_owned() - chief_state.slice(s![0..3]).to_owned();
         let v_rel_eci = deputy_state.slice(s![3..6]).to_owned() - chief_state.slice(s![3..6]).to_owned();
 
-        // **ECI → LVLH 変換行列**
+        // **ECI → Lvlh 変換行列**
         let transform_matrix = Math::mat_ecef2lvlh(
             &chief_state.slice(s![0..3]).to_owned(),
             &chief_state.slice(s![3..6]).to_owned(),
@@ -54,7 +54,7 @@ impl Math {
         // **相対速度補正 (ω × r)**
         let v_rel_corrected = v_rel_eci.to_owned() - Math::cross_product(&omega, &r_rel_eci.to_owned());
 
-        // **LVLH 変換適用**
+        // **Lvlh 変換適用**
         let r_lvlh = transform_matrix.dot(&r_rel_eci.to_owned());
         let v_lvlh = transform_matrix.dot(&v_rel_corrected);
 

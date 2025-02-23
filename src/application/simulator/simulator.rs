@@ -46,16 +46,16 @@ where
 }
 
 use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
-use crate::domain::state::relative_position_velocity_state::RelativePositionVelocityState;
-use crate::domain::force::force_3d::Force3D;
+use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 
 #[test]
 fn test_hcw_dynamics_with_rk4() {
-    let initial_state = RelativePositionVelocityState::form_from_list(
+    let initial_state = PositionVelocityStateLvlh::form_from_list(
         [100.0, 200.0, 300.0],
         [0.1, 0.2, 0.3],
     );
-    let external_force = Force3D::form_from_list([0.0, 0.0, 0.0]);
+    let external_force = Force3dLvlh::form_from_list([0.0, 0.0, 0.0]);
     let dynamics = HcwDynamics::new(398600.4418, 7000.0);
     let propagator = RungeKutta4Propagator;
     let dt = 60.0; // タイムステップ（秒）

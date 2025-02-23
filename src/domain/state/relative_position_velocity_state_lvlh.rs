@@ -2,23 +2,23 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use super::position_velocity_state::PositionVelocityState;
+use super::position_velocity_state_ecef::PositionVelocityStateEcef;
 use crate::repositry::loggable_trait::Loggable;
 
 
 // 位置・速度の状態量
 #[derive(Debug, Clone)]
-pub struct RelativePositionVelocityState {
+pub struct PositionVelocityStateLvlh {
     state: Array1<f64>, // [px, py, pz, vx, vy, vz]
 }
 
-impl RelativePositionVelocityState {
+impl PositionVelocityStateLvlh {
     pub fn form_from_list(position: [f64; 3], velocity: [f64; 3]) -> Self {
         let state = arr1(&[position[0], position[1], position[2], velocity[0], velocity[1], velocity[2]]);
         Self { state }
     }
 
-    pub fn form_from_states(state_base: &PositionVelocityState, state_target: &PositionVelocityState) -> Self {
+    pub fn form_from_states(state_base: &PositionVelocityStateEcef, state_target: &PositionVelocityStateEcef) -> Self {
         Self::form_from_array((state_target - state_base).get_vector().clone())
     }
 
@@ -39,7 +39,7 @@ impl RelativePositionVelocityState {
     }
 }
 
-impl StateVector for RelativePositionVelocityState {
+impl StateVector for PositionVelocityStateLvlh {
     fn get_vector(&self) -> &Array1<f64> {
         &self.state
     }
@@ -49,7 +49,7 @@ impl StateVector for RelativePositionVelocityState {
     }
 }
 
-impl Loggable for RelativePositionVelocityState{
+impl Loggable for PositionVelocityStateLvlh{
     fn output_log(&self) -> String {
         let state_str : Vec<String> = self.get_vector().iter().map(|v| v.to_string()).collect();
         state_str.join(",")
@@ -61,75 +61,75 @@ impl Loggable for RelativePositionVelocityState{
 }
 
 /// **演算子のオーバーロード**
-impl Add for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn add(self, rhs: RelativePositionVelocityState) -> RelativePositionVelocityState {
+impl Add for PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn add(self, rhs: PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
         self.add_vec(&rhs)
     }
 }
 
-impl Add for &RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn add(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
+impl Add for &PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn add(self, rhs: &PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn sub(self, rhs: RelativePositionVelocityState) -> RelativePositionVelocityState {
+impl Sub for PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn sub(self, rhs: PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
         self.sub_vec(&rhs)
     }
 }
 
-impl Sub for &RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn sub(self, rhs: &RelativePositionVelocityState) -> RelativePositionVelocityState {
+impl Sub for &PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn sub(self, rhs: &PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn mul(self, scalar: f64) -> RelativePositionVelocityState {
+impl Mul<f64> for PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn mul(self, scalar: f64) -> PositionVelocityStateLvlh {
         self.mul_scalar(scalar)
     }
 }
 
-impl Mul<f64> for &RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn mul(self, scalar: f64) -> RelativePositionVelocityState {
+impl Mul<f64> for &PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn mul(self, scalar: f64) -> PositionVelocityStateLvlh {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn div(self, scalar: f64) -> RelativePositionVelocityState {
+impl Div<f64> for PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn div(self, scalar: f64) -> PositionVelocityStateLvlh {
         self.div_scalar(scalar)
     }
 }
 
-impl Div<f64> for &RelativePositionVelocityState {
-    type Output = RelativePositionVelocityState;
-    fn div(self, scalar: f64) -> RelativePositionVelocityState {
+impl Div<f64> for &PositionVelocityStateLvlh {
+    type Output = PositionVelocityStateLvlh;
+    fn div(self, scalar: f64) -> PositionVelocityStateLvlh {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<RelativePositionVelocityState> for Array2<f64> {
-    type Output = RelativePositionVelocityState;
-    fn mul(self, rhs: RelativePositionVelocityState) -> RelativePositionVelocityState {
+impl Mul<PositionVelocityStateLvlh> for Array2<f64> {
+    type Output = PositionVelocityStateLvlh;
+    fn mul(self, rhs: PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
         let result = self.dot(rhs.get_vector());
-        RelativePositionVelocityState::form_from_array(result)
+        PositionVelocityStateLvlh::form_from_array(result)
     }
 }
 use ndarray::{arr2};
-/// **`RelativePositionVelocityState` の基本演算テスト**
+/// **`PositionVelocityStateLvlh` の基本演算テスト**
 #[test]
 fn test_position_velocity_state_operations() {
-    let pv_state1 = RelativePositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
-    let pv_state2 = RelativePositionVelocityState::form_from_list([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
+    let pv_state1 = PositionVelocityStateLvlh::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let pv_state2 = PositionVelocityStateLvlh::form_from_list([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
 
     // 加算
     let sum = pv_state1.clone() + pv_state2.clone();
@@ -149,10 +149,10 @@ fn test_position_velocity_state_operations() {
 }
 
 
-/// **行列 x `RelativePositionVelocityState` の変換テスト**
+/// **行列 x `PositionVelocityStateLvlh` の変換テスト**
 #[test]
 fn test_position_velocity_state_matrix_multiplication() {
-    let pv_state = RelativePositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let pv_state = PositionVelocityStateLvlh::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
 
     let transform_matrix = arr2(&[
         [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -169,10 +169,10 @@ fn test_position_velocity_state_matrix_multiplication() {
 
 #[test]
 fn test_form_from_states() {
-    let base = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.0, 0.0]);
-    let target = PositionVelocityState::form_from_list([7100.0, 100.0, 0.0], [0.1, 8.0, 0.0]);
+    let base = PositionVelocityStateEcef::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.0, 0.0]);
+    let target = PositionVelocityStateEcef::form_from_list([7100.0, 100.0, 0.0], [0.1, 8.0, 0.0]);
 
-    let relative = RelativePositionVelocityState::form_from_states(&base, &target);
+    let relative = PositionVelocityStateLvlh::form_from_states(&base, &target);
 
     assert_eq!(relative.position(), arr1(&[100.0, 100.0, 0.0]));
     assert_eq!(relative.velocity(), arr1(&[0.1, 1.0, 0.0]));

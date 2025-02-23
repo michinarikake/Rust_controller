@@ -1,9 +1,9 @@
 use ndarray::{Array1, Array2, arr2, s};
 
-use crate::domain::force::force_3d::Force3D;
+use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
-use crate::domain::state::relative_position_velocity_state::RelativePositionVelocityState;
+use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 
 /// **二体問題の連続ダイナミクス**
@@ -24,8 +24,8 @@ impl HcwDynamics {
     }
 }
 
-impl ContinuousDynamics<RelativePositionVelocityState, Force3D> for HcwDynamics {
-    fn compute_derivative(&self, state: &RelativePositionVelocityState, input: &Force3D) -> RelativePositionVelocityState {
+impl ContinuousDynamics<PositionVelocityStateLvlh, Force3dLvlh> for HcwDynamics {
+    fn compute_derivative(&self, state: &PositionVelocityStateLvlh, input: &Force3dLvlh) -> PositionVelocityStateLvlh {
         let system_matrix = arr2(&[
             [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
             [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
@@ -42,6 +42,6 @@ impl ContinuousDynamics<RelativePositionVelocityState, Force3D> for HcwDynamics 
             [0.0, 0.0, 1.0]
         ]);
         let vec = (system_matrix * state.clone()).get_vector() + (input_matrix * input.clone()).get_vector();
-        RelativePositionVelocityState::form_from_array(vec)
+        PositionVelocityStateLvlh::form_from_array(vec)
     }
 }

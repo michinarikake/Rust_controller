@@ -2,16 +2,16 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use super::relative_position_velocity_state::RelativePositionVelocityState;
+use super::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::repositry::loggable_trait::Loggable;
 
 // 位置・速度・共分散の状態量
 #[derive(Debug, Clone)]
-pub struct RelativePositionVelocityCovarianceState {
+pub struct PositionVelocityCovarianceStateLvlh {
     state: Array1<f64>, // [l, mu_x(6), est_x(6), p(21)]
 }
 
-impl RelativePositionVelocityCovarianceState {
+impl PositionVelocityCovarianceStateLvlh {
     pub fn form_from_list(l: f64, mu_x: [f64; 6], est_x: [f64; 6], p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
@@ -32,7 +32,7 @@ impl RelativePositionVelocityCovarianceState {
         }
     }
 
-    pub fn from_from_states(l: f64, mu_x: &RelativePositionVelocityState, est_x: &RelativePositionVelocityState, p: Array2<f64>) -> Self {
+    pub fn from_from_states(l: f64, mu_x: &PositionVelocityStateLvlh, est_x: &PositionVelocityStateLvlh, p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
         let mut p_upper = Vec::with_capacity(21);
@@ -56,16 +56,16 @@ impl RelativePositionVelocityCovarianceState {
         self.state[0]
     }
 
-    pub fn get_mu_x(&self) -> RelativePositionVelocityState {
+    pub fn get_mu_x(&self) -> PositionVelocityStateLvlh {
         let position: [f64; 3] = self.state.slice(s![1..4]).to_owned().to_vec().try_into().unwrap();
         let velocity: [f64; 3] = self.state.slice(s![4..7]).to_owned().to_vec().try_into().unwrap();
-        RelativePositionVelocityState::form_from_list(position, velocity)
+        PositionVelocityStateLvlh::form_from_list(position, velocity)
     }
 
-    pub fn get_est_x(&self) -> RelativePositionVelocityState {
+    pub fn get_est_x(&self) -> PositionVelocityStateLvlh {
         let position: [f64; 3] = self.state.slice(s![7..10]).to_owned().to_vec().try_into().unwrap();
         let velocity: [f64; 3] = self.state.slice(s![10..13]).to_owned().to_vec().try_into().unwrap();
-        RelativePositionVelocityState::form_from_list(position, velocity)
+        PositionVelocityStateLvlh::form_from_list(position, velocity)
     }
 
     pub fn get_covariance_matrix(&self) -> Array2<f64> {
@@ -85,7 +85,7 @@ impl RelativePositionVelocityCovarianceState {
 }
 
 
-impl StateVector for RelativePositionVelocityCovarianceState {
+impl StateVector for PositionVelocityCovarianceStateLvlh {
     fn get_vector(&self) -> &Array1<f64> {
         &self.state
     }
@@ -96,7 +96,7 @@ impl StateVector for RelativePositionVelocityCovarianceState {
 
 }
 
-impl Loggable for RelativePositionVelocityCovarianceState{
+impl Loggable for PositionVelocityCovarianceStateLvlh{
     fn header(&self) -> String {
         let mu_headers: Vec<String> = (0..6).map(|i| format!("mu_x_{}", i)).collect();
         let est_headers: Vec<String> = (0..6).map(|i| format!("est_x_{}", i)).collect();
@@ -117,72 +117,72 @@ impl Loggable for RelativePositionVelocityCovarianceState{
 }
 
 /// **演算子のオーバーロード**
-impl Add for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn add(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+impl Add for PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn add(self, rhs: PositionVelocityCovarianceStateLvlh) -> PositionVelocityCovarianceStateLvlh {
         self.add_vec(&rhs)
     }
 }
 
-impl Add for &RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn add(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+impl Add for &PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn add(self, rhs: &PositionVelocityCovarianceStateLvlh) -> PositionVelocityCovarianceStateLvlh {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn sub(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+impl Sub for PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn sub(self, rhs: PositionVelocityCovarianceStateLvlh) -> PositionVelocityCovarianceStateLvlh {
         self.sub_vec(&rhs)
     }
 }
 
-impl Sub for &RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn sub(self, rhs: &RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+impl Sub for &PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn sub(self, rhs: &PositionVelocityCovarianceStateLvlh) -> PositionVelocityCovarianceStateLvlh {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn mul(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
+impl Mul<f64> for PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn mul(self, scalar: f64) -> PositionVelocityCovarianceStateLvlh {
         self.mul_scalar(scalar)
     }
 }
 
-impl Mul<f64> for &RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn mul(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
+impl Mul<f64> for &PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn mul(self, scalar: f64) -> PositionVelocityCovarianceStateLvlh {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn div(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
+impl Div<f64> for PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn div(self, scalar: f64) -> PositionVelocityCovarianceStateLvlh {
         self.div_scalar(scalar)
     }
 }
 
-impl Div<f64> for &RelativePositionVelocityCovarianceState {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn div(self, scalar: f64) -> RelativePositionVelocityCovarianceState {
+impl Div<f64> for &PositionVelocityCovarianceStateLvlh {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn div(self, scalar: f64) -> PositionVelocityCovarianceStateLvlh {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<RelativePositionVelocityCovarianceState> for Array2<f64> {
-    type Output = RelativePositionVelocityCovarianceState;
-    fn mul(self, rhs: RelativePositionVelocityCovarianceState) -> RelativePositionVelocityCovarianceState {
+impl Mul<PositionVelocityCovarianceStateLvlh> for Array2<f64> {
+    type Output = PositionVelocityCovarianceStateLvlh;
+    fn mul(self, rhs: PositionVelocityCovarianceStateLvlh) -> PositionVelocityCovarianceStateLvlh {
         let result = self.dot(rhs.get_vector());
-        RelativePositionVelocityCovarianceState::form_from_array(result)
+        PositionVelocityCovarianceStateLvlh::form_from_array(result)
     }
 }
 
 
-/// **`RelativePositionVelocityCovarianceState` の共分散行列のテスト**
+/// **`PositionVelocityCovarianceStateLvlh` の共分散行列のテスト**
 use ndarray::{arr2};
 #[test]
 fn test_position_velocity_covariance_state() {
@@ -195,10 +195,10 @@ fn test_position_velocity_covariance_state() {
         [0.05, 0.09, 0.12, 0.14, 0.15, 0.6],
     ]);
 
-    let mu_x = RelativePositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
-    let est_x = RelativePositionVelocityState::form_from_list([6999.0, 0.0, 0.1], [0.0, 7.49, 0.1]);
+    let mu_x = PositionVelocityStateLvlh::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let est_x = PositionVelocityStateLvlh::form_from_list([6999.0, 0.0, 0.1], [0.0, 7.49, 0.1]);
 
-    let pvc_state = RelativePositionVelocityCovarianceState::from_from_states(1.0, &mu_x, &est_x, p_full.clone());
+    let pvc_state = PositionVelocityCovarianceStateLvlh::from_from_states(1.0, &mu_x, &est_x, p_full.clone());
 
     assert_eq!(pvc_state.get_l(), 1.0);
     assert_eq!(pvc_state.get_mu_x().get_vector(), mu_x.get_vector());

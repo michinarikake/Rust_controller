@@ -2,8 +2,8 @@ use satellite_simulator::application::simulator::simulator::Simulator;
 use satellite_simulator::repositry::logger::Logger;
 use satellite_simulator::domain::dynamics::propagator::RungeKutta4Propagator;
 use satellite_simulator::domain::dynamics::dynamics_hcw::HcwDynamics;
-use satellite_simulator::domain::state::relative_position_velocity_state::RelativePositionVelocityState;
-use satellite_simulator::domain::force::force_3d::Force3D;
+use satellite_simulator::domain::state::relative_position_velocity_state::PositionVelocityStateLvlh;
+use satellite_simulator::domain::force::force_3d::Force3dLvlh;
 use chrono::Local;
 use std::process::Command;
 use std::env;
@@ -16,11 +16,11 @@ fn simulator_log_test() {
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
     // 初期状態
-    let initial_state = RelativePositionVelocityState::form_from_list(
+    let initial_state = PositionVelocityStateLvlh::form_from_list(
         [100.0, 200.0, 300.0],
         [0.1, 0.2, 0.3],
     );
-    let external_force = Force3D::form_from_list([0.0, 0.0, 0.0]);
+    let external_force = Force3dLvlh::form_from_list([0.0, 0.0, 0.0]);
     let dynamics = HcwDynamics::new(398600.4418, 7000.0);
     let propagator = RungeKutta4Propagator;
     let dt = 10.0;

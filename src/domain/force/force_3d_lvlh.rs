@@ -5,18 +5,18 @@ use super::force_trait::Force;
 use crate::repositry::loggable_trait::Loggable;
 
 #[derive(Debug, Clone)]
-pub struct Force3D{
+pub struct Force3dLvlh{
     force: Array1<f64>
 }
 
-impl Force3D{
+impl Force3dLvlh{
     pub fn form_from_list(force_list: [f64;3]) -> Self {
         let force = arr1(&[force_list[0], force_list[1], force_list[2]]);
         Self {force}
     }
 }
 
-impl Force for Force3D {
+impl Force for Force3dLvlh {
     fn get_vector(&self) -> &Array1<f64> {
         &self.force
     }
@@ -26,7 +26,7 @@ impl Force for Force3D {
     }
 }
 
-impl Loggable for Force3D {
+impl Loggable for Force3dLvlh {
     fn header(&self) -> String {
         "f0,f1,f2".to_string()
     }
@@ -38,48 +38,48 @@ impl Loggable for Force3D {
 }
 
 /// **演算子のオーバーロード**
-impl Add for Force3D {
-    type Output = Force3D;
-    fn add(self, rhs: Force3D) -> Force3D {
+impl Add for Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn add(self, rhs: Force3dLvlh) -> Force3dLvlh {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for Force3D {
-    type Output = Force3D;
-    fn sub(self, rhs: Force3D) -> Force3D {
+impl Sub for Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn sub(self, rhs: Force3dLvlh) -> Force3dLvlh {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for Force3D {
-    type Output = Force3D;
-    fn mul(self, scalar: f64) -> Force3D {
+impl Mul<f64> for Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn mul(self, scalar: f64) -> Force3dLvlh {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for Force3D {
-    type Output = Force3D;
-    fn div(self, scalar: f64) -> Force3D {
+impl Div<f64> for Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn div(self, scalar: f64) -> Force3dLvlh {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<Force3D> for Array2<f64> {
-    type Output = Force3D;
-    fn mul(self, rhs: Force3D) -> Force3D {
+impl Mul<Force3dLvlh> for Array2<f64> {
+    type Output = Force3dLvlh;
+    fn mul(self, rhs: Force3dLvlh) -> Force3dLvlh {
         let result = self.dot(rhs.get_vector());
-        Force3D::form_from_array(result)
+        Force3dLvlh::form_from_array(result)
     }
 }
 
 use ndarray::{arr2};
 
 #[test]
-fn test_force3d_operations() {
-    let f1 = Force3D::form_from_list([1.0, 2.0, 3.0]);
-    let f2 = Force3D::form_from_list([0.5, -1.0, 2.0]);
+fn test_Force3dLvlh_operations() {
+    let f1 = Force3dLvlh::form_from_list([1.0, 2.0, 3.0]);
+    let f2 = Force3dLvlh::form_from_list([0.5, -1.0, 2.0]);
 
     // 加算
     let sum = f1.clone() + f2.clone();
@@ -99,8 +99,8 @@ fn test_force3d_operations() {
 }
 
 #[test]
-fn test_force3d_matrix_multiplication() {
-    let f = Force3D::form_from_list([1.0, 2.0, 3.0]);
+fn test_Force3dLvlh_matrix_multiplication() {
+    let f = Force3dLvlh::form_from_list([1.0, 2.0, 3.0]);
 
     let transform_matrix = arr2(&[
         [2.0, 0.0, 0.0],

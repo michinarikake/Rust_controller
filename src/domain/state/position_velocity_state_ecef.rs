@@ -7,11 +7,11 @@ use crate::repositry::loggable_trait::Loggable;
 
 // 位置・速度の状態量
 #[derive(Debug, Clone)]
-pub struct PositionVelocityState {
+pub struct PositionVelocityStateEcef {
     state: Array1<f64>, // [p0, p1, p2, v0, v1, v2]
 }
 
-impl PositionVelocityState {
+impl PositionVelocityStateEcef {
     pub fn form_from_list(position: [f64; 3], velocity: [f64; 3]) -> Self {
         let state = arr1(&[position[0], position[1], position[2], velocity[0], velocity[1], velocity[2]]);
         Self { state }
@@ -34,7 +34,7 @@ impl PositionVelocityState {
     }
 }
 
-impl StateVector for PositionVelocityState {
+impl StateVector for PositionVelocityStateEcef {
     fn get_vector(&self) -> &Array1<f64> {
         &self.state
     }
@@ -44,7 +44,7 @@ impl StateVector for PositionVelocityState {
     }
 }
 
-impl Loggable for PositionVelocityState{
+impl Loggable for PositionVelocityStateEcef{
     fn output_log(&self) -> String {
         let state_str : Vec<String> = self.get_vector().iter().map(|v| v.to_string()).collect();
         state_str.join(",")
@@ -56,76 +56,76 @@ impl Loggable for PositionVelocityState{
 }
 
 /// **演算子のオーバーロード**
-impl Add for PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn add(self, rhs: PositionVelocityState) -> PositionVelocityState {
+impl Add for PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn add(self, rhs: PositionVelocityStateEcef) -> PositionVelocityStateEcef {
         self.add_vec(&rhs)
     }
 }
 
-impl Add for &PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn add(self, rhs: &PositionVelocityState) -> PositionVelocityState {
+impl Add for &PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn add(self, rhs: &PositionVelocityStateEcef) -> PositionVelocityStateEcef {
         self.add_vec(&rhs)
     }
 }
 
-impl Sub for PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn sub(self, rhs: PositionVelocityState) -> PositionVelocityState {
+impl Sub for PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn sub(self, rhs: PositionVelocityStateEcef) -> PositionVelocityStateEcef {
         self.sub_vec(&rhs)
     }
 }
 
-impl Sub for &PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn sub(self, rhs: &PositionVelocityState) -> PositionVelocityState {
+impl Sub for &PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn sub(self, rhs: &PositionVelocityStateEcef) -> PositionVelocityStateEcef {
         self.sub_vec(&rhs)
     }
 }
 
-impl Mul<f64> for PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn mul(self, scalar: f64) -> PositionVelocityState {
+impl Mul<f64> for PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn mul(self, scalar: f64) -> PositionVelocityStateEcef {
         self.mul_scalar(scalar)
     }
 }
 
-impl Mul<f64> for &PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn mul(self, scalar: f64) -> PositionVelocityState {
+impl Mul<f64> for &PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn mul(self, scalar: f64) -> PositionVelocityStateEcef {
         self.mul_scalar(scalar)
     }
 }
 
-impl Div<f64> for PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn div(self, scalar: f64) -> PositionVelocityState {
+impl Div<f64> for PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn div(self, scalar: f64) -> PositionVelocityStateEcef {
         self.div_scalar(scalar)
     }
 }
 
-impl Div<f64> for &PositionVelocityState {
-    type Output = PositionVelocityState;
-    fn div(self, scalar: f64) -> PositionVelocityState {
+impl Div<f64> for &PositionVelocityStateEcef {
+    type Output = PositionVelocityStateEcef;
+    fn div(self, scalar: f64) -> PositionVelocityStateEcef {
         self.div_scalar(scalar)
     }
 }
 
-impl Mul<PositionVelocityState> for Array2<f64> {
-    type Output = PositionVelocityState;
-    fn mul(self, rhs: PositionVelocityState) -> PositionVelocityState {
+impl Mul<PositionVelocityStateEcef> for Array2<f64> {
+    type Output = PositionVelocityStateEcef;
+    fn mul(self, rhs: PositionVelocityStateEcef) -> PositionVelocityStateEcef {
         let result = self.dot(rhs.get_vector());
-        PositionVelocityState::form_from_array(result)
+        PositionVelocityStateEcef::form_from_array(result)
     }
 }
 
 use ndarray::{arr2};
-/// **`PositionVelocityState` の基本演算テスト**
+/// **`PositionVelocityStateEcef` の基本演算テスト**
 #[test]
 fn test_position_velocity_state_operations() {
-    let pv_state1 = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
-    let pv_state2 = PositionVelocityState::form_from_list([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
+    let pv_state1 = PositionVelocityStateEcef::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let pv_state2 = PositionVelocityStateEcef::form_from_list([1000.0, 0.0, 0.0], [0.0, -1.5, 0.0]);
 
     // 加算
     let sum1 = pv_state1.clone() + pv_state2.clone();
@@ -153,10 +153,10 @@ fn test_position_velocity_state_operations() {
 }
 
 
-/// **行列 x `PositionVelocityState` の変換テスト**
+/// **行列 x `PositionVelocityStateEcef` の変換テスト**
 #[test]
 fn test_position_velocity_state_matrix_multiplication() {
-    let pv_state = PositionVelocityState::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
+    let pv_state = PositionVelocityStateEcef::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
 
     let transform_matrix = arr2(&[
         [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
