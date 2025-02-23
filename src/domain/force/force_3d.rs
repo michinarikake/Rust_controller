@@ -9,7 +9,7 @@ pub struct Force3D{
 }
 
 impl Force3D{
-    fn form_from_list(force_list: [f64;3]) -> Self {
+    pub fn form_from_list(force_list: [f64;3]) -> Self {
         let force = arr1(&[force_list[0], force_list[1], force_list[2]]);
         Self {force}
     }
