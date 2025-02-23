@@ -24,4 +24,8 @@ pub trait StateVector: Clone {
     fn div_scalar(&self, scalar: f64) -> Self {
         Self::form_from_array(self.get_vector() / scalar)
     }
+
+    // ここに演算子オーバーロードを実装したい...
+    // traitの実装先が2つ以上あるとき、異なる型間の演算がぶつかってしまうからできないらしい
+    // やるとしたらマクロかな...
 }
