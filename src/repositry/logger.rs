@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::io::{Write, BufWriter};
 // use std::path::Path;
 use chrono::Local;
-use crate::repositry::loggable::Loggable;
+use crate::repositry::loggable_trait::Loggable;
 
 /// **汎用的な `Logger`**
 pub struct Logger {

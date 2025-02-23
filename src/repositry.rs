@@ -1,2 +1,2 @@
-pub mod loggable;
+pub mod loggable_trait;
 pub mod logger;

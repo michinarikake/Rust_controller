@@ -5,6 +5,8 @@ use satellite_simulator::domain::dynamics::dynamics_hcw::HcwDynamics;
 use satellite_simulator::domain::state::relative_position_velocity_state::RelativePositionVelocityState;
 use satellite_simulator::domain::force::force_3d::Force3D;
 use chrono::Local;
+use std::process::Command;
+use std::env;
 
 fn main() {
     let log_filename = "simulation_log.csv";
@@ -42,4 +44,25 @@ fn main() {
         Local::now().format("%Y-%m-%d"),
         Local::now().format("%Y-%m-%d")
     );
+    
+     // **プロジェクトのルートパスを取得**
+     let current_dir = env::current_dir().expect("Failed to get current directory");
+     let script_path = current_dir.join("src/plots/plot_common.py");
+ 
+     // **スクリプトの存在を確認**
+     if script_path.exists() {
+         let output = Command::new("python") // または "python"（環境による）
+             .arg(script_path.to_str().unwrap())
+             .output()
+             .expect("Failed to execute plot_common.py");
+ 
+         if output.status.success() {
+             println!("Python script executed successfully.");
+             println!("{}", String::from_utf8_lossy(&output.stdout));
+         } else {
+             eprintln!("Error executing Python script:\n{}", String::from_utf8_lossy(&output.stderr));
+         }
+     } else {
+         eprintln!("Error: plot_common.py not found at {:?}", script_path);
+     }
 }

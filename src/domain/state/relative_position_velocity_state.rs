@@ -3,7 +3,7 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
 use super::position_velocity_state::PositionVelocityState;
-use crate::repositry::loggable::Loggable;
+use crate::repositry::loggable_trait::Loggable;
 
 
 // 位置・速度の状態量
@@ -56,7 +56,7 @@ impl Loggable for RelativePositionVelocityState{
     }
 
     fn header(&self) -> String {
-        "px,py,pz,vx,vy,vz".to_string()
+        "p0,p1,p2,v0,v1,v2".to_string()
     }
 }
 

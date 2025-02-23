@@ -2,7 +2,7 @@ use ndarray::{Array1, Array2, arr1};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::force_trait::Force;
-use crate::repositry::loggable::Loggable;
+use crate::repositry::loggable_trait::Loggable;
 
 #[derive(Debug, Clone)]
 pub struct Force3D{
@@ -28,7 +28,7 @@ impl Force for Force3D {
 
 impl Loggable for Force3D {
     fn header(&self) -> String {
-        "fx,fy,fz".to_string()
+        "f0,f1,f2".to_string()
     }
 
     fn output_log(&self) -> String {

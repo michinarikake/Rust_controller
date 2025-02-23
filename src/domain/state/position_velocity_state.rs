@@ -2,13 +2,13 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use crate::repositry::loggable::Loggable;
+use crate::repositry::loggable_trait::Loggable;
 
 
 // 位置・速度の状態量
 #[derive(Debug, Clone)]
 pub struct PositionVelocityState {
-    state: Array1<f64>, // [px, py, pz, vx, vy, vz]
+    state: Array1<f64>, // [p0, p1, p2, v0, v1, v2]
 }
 
 impl PositionVelocityState {
@@ -51,7 +51,7 @@ impl Loggable for PositionVelocityState{
     }
 
     fn header(&self) -> String {
-        "px,py,pz,vx,vy,vz".to_string()
+        "p0,p1,p2,v0,v1,v2".to_string()
     }
 }
 

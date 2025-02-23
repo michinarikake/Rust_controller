@@ -3,7 +3,7 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
 use super::relative_position_velocity_state::RelativePositionVelocityState;
-use crate::repositry::loggable::Loggable;
+use crate::repositry::loggable_trait::Loggable;
 
 // 位置・速度・共分散の状態量
 #[derive(Debug, Clone)]
