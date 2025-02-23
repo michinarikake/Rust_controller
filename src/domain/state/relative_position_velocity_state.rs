@@ -18,10 +18,7 @@ impl RelativePositionVelocityState {
     }
 
     pub fn form_from_states(state_base: &PositionVelocityState, state_target: &PositionVelocityState) -> Self {
-        let rel_position = state_target.position() - state_base.position();
-        let rel_velocity = state_target.velocity() - state_base.velocity();
-
-        Self::form_from_array(ndarray::concatenate![ndarray::Axis(0), rel_position, rel_velocity])
+        Self::form_from_array((state_target - state_base).get_vector().clone())
     }
 
     pub fn position(&self) -> Array1<f64> {
