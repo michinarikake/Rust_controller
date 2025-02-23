@@ -13,16 +13,7 @@ pub struct PositionVelocityPairStateEcef {
 }
 
 impl PositionVelocityPairStateEcef {
-    /// **新規作成**
-    pub fn form_from_states(chief: &PositionVelocityStateEcef, deputy: &PositionVelocityStateEcef) -> Self {
-        let state = concatenate![
-            Axis(0),
-            chief.get_vector().view(),  // `view()` を追加
-            deputy.get_vector().view()  // `view()` を追加
-        ];
-
-        Self { state }
-    }
+    // 単純にecefの差分を取るだけではだめなので注意！！
 
     /// **チーフ衛星の状態を取得**
     pub fn chief(&self) -> PositionVelocityStateEcef {
