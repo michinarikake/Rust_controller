@@ -39,11 +39,8 @@ fn main() {
 
     logger.flush();
 
-    println!(
-        "Simulation logs saved in: data/{}/{}_simulation_log.csv",
-        Local::now().format("%Y-%m-%d"),
-        Local::now().format("%Y-%m-%d")
-    );
+    let date_str = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let log_filename = format!("data/{}/{}_simulation_log.csv", date_str, date_str);
     
      // **プロジェクトのルートパスを取得**
      let current_dir = env::current_dir().expect("Failed to get current directory");
@@ -53,6 +50,7 @@ fn main() {
      if script_path.exists() {
          let output = Command::new("python") // または "python"（環境による）
              .arg(script_path.to_str().unwrap())
+             .arg(&log_filename)  
              .output()
              .expect("Failed to execute plot_common.py");
  

@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,5 +68,11 @@ def plot_2d_data(steps, data, labels, title, save_path):
 
 # **メイン実行**
 if __name__ == "__main__":
-    log_filename = "data/2025-02-23/2025-02-23_simulation_log.csv"
+    # コマンドライン引数で CSV ファイルを指定
+    if len(sys.argv) > 1:
+        log_filename = sys.argv[1]
+    else:
+        log_filename = "data/2025-02-23/2025-02-23_simulation_log.csv"  # デフォルト値
+
+    print(f"Processing log file: {log_filename}")
     read_log_and_plot(log_filename)
