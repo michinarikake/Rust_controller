@@ -18,9 +18,9 @@ impl Force3dEci{
         Self {force}
     }
 
-    pub fn form_from_lvlh(force: Force3dLvlh, state_eci:PositionVelocityStateEci) -> Self{
+    pub fn form_from_lvlh(force: &Force3dLvlh, state_eci: &PositionVelocityStateEci) -> Self{
         let force = Math::mat_lvlh2eci(&state_eci.position(), &state_eci.velocity()) * force;
-        Self {force}
+        Force3dEci::form_from_array(force.get_vector().clone())
     }
 }
 
@@ -46,9 +46,17 @@ impl Loggable for Force3dEci {
 }
 
 /// **演算子のオーバーロード**
+/// **演算子のオーバーロード**
 impl Add for Force3dEci {
     type Output = Force3dEci;
     fn add(self, rhs: Force3dEci) -> Force3dEci {
+        self.add_vec(&rhs)
+    }
+}
+
+impl Add for &Force3dEci {
+    type Output = Force3dEci;
+    fn add(self, rhs: &Force3dEci) -> Force3dEci {
         self.add_vec(&rhs)
     }
 }
@@ -60,7 +68,21 @@ impl Sub for Force3dEci {
     }
 }
 
+impl Sub for &Force3dEci {
+    type Output = Force3dEci;
+    fn sub(self, rhs: &Force3dEci) -> Force3dEci {
+        self.sub_vec(&rhs)
+    }
+}
+
 impl Mul<f64> for Force3dEci {
+    type Output = Force3dEci;
+    fn mul(self, scalar: f64) -> Force3dEci {
+        self.mul_scalar(scalar)
+    }
+}
+
+impl Mul<f64> for &Force3dEci {
     type Output = Force3dEci;
     fn mul(self, scalar: f64) -> Force3dEci {
         self.mul_scalar(scalar)
@@ -74,9 +96,24 @@ impl Div<f64> for Force3dEci {
     }
 }
 
+impl Div<f64> for &Force3dEci {
+    type Output = Force3dEci;
+    fn div(self, scalar: f64) -> Force3dEci {
+        self.div_scalar(scalar)
+    }
+}
+
 impl Mul<Force3dEci> for Array2<f64> {
     type Output = Force3dEci;
     fn mul(self, rhs: Force3dEci) -> Force3dEci {
+        let result = self.dot(rhs.get_vector());
+        Force3dEci::form_from_array(result)
+    }
+}
+
+impl Mul<&Force3dEci> for Array2<f64> {
+    type Output = Force3dEci;
+    fn mul(self, rhs: &Force3dEci) -> Force3dEci {
         let result = self.dot(rhs.get_vector());
         Force3dEci::form_from_array(result)
     }
