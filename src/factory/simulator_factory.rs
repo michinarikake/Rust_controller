@@ -52,6 +52,7 @@ impl SimulatorFactory {
     }
 
 
+    #[allow(unused)]
     fn initialize_state(init_type: &InitializationTypeEnum, init_data: &[f64], mu: f64) -> PositionVelocityStateEci {
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
@@ -72,6 +73,7 @@ impl SimulatorFactory {
         }
     }
 
+    #[allow(unused)]
     fn initialize_pair_state(init_type: &InitializationTypeEnum, init_data: &[f64], mu: f64) -> PositionVelocityPairStateEci {
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
@@ -91,6 +93,7 @@ impl SimulatorFactory {
         }
     }
 
+    #[allow(unused)]
     fn initialize_relative_state(init_type: &InitializationTypeEnum, init_data: &[f64]) -> PositionVelocityStateLvlh {
         match init_type {
             InitializationTypeEnum::RelativePositionVelocity => {

@@ -68,6 +68,7 @@ impl Math {
         // concatenate![Axis(0), r_rel_eci, v_rel_eci]
     }
 
+    #[allow(non_snake_case)]
     pub fn pqw_to_eci_matrix(i_rad: f64, omega_rad: f64, Omega_rad: f64) -> Array2<f64> {
         let cos_Omega = Omega_rad.cos();
         let sin_Omega = Omega_rad.sin();

@@ -10,6 +10,7 @@ use crate::repositry::loggable_trait::Loggable;
 use crate::domain::math::formulations::Math;
 
 #[derive(Debug, Clone)]
+#[allow(non_snake_case)]
 pub struct OrbitalElements {
     state: Array1<f64>, // [a ,e, i_rad,omega_rad, Omega_rad, nu_rad]
     pub a: f64,      // 長半径 (m)
@@ -21,6 +22,7 @@ pub struct OrbitalElements {
 }
 
 impl OrbitalElements {
+    #[allow(non_snake_case)]
     pub fn form_from_elements(a: f64, e: f64, i_rad: f64, omega_rad: f64, Omega_rad: f64, nu_rad: f64) -> Result<Self, &'static str> {
         if a <= 0.0 {
             return Err("軌道長半径 (a) は正の値でなければなりません。");
@@ -34,6 +36,7 @@ impl OrbitalElements {
         Ok(Self {state: arr1(&[a, e, i_rad, omega_rad, Omega_rad, nu_rad]), a, e, i_rad, omega_rad, Omega_rad, nu_rad })
     }
 
+    #[allow(non_snake_case)]
     pub fn form_from_state(position_velocity: &PositionVelocityStateEci, mu: f64) -> Result<Self, &'static str> {
         let r = position_velocity.position();
         let r_norm = r.dot(&r).sqrt();
