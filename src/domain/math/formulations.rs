@@ -15,6 +15,11 @@ impl Math {
         ])
     }
 
+    pub fn normalize(v: &Array1<f64>) -> Array1<f64> {
+        let norm = v[0].powi(2) + v[1].powi(2) + v[2].powi(2);
+        v / norm
+    }
+
     /// **ECI (慣性座標系) → Lvlh 座標系の変換行列を計算**
     pub fn mat_eci2lvlh(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
         let r_norm = position.dot(position).sqrt();
