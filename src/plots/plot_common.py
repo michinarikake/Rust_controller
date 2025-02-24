@@ -16,7 +16,7 @@ def read_log_and_plot(log_filename):
         raise ValueError(f"CSV に必要なカラムがありません: {required_columns}")
 
     # **保存ディレクトリの作成**
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = datetime.now().strftime("%Y-%m-%d-%H-%M")
     plot_dir = os.path.join("data", date_str, "plots")
     os.makedirs(plot_dir, exist_ok=True)
 

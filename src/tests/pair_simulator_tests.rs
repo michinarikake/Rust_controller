@@ -50,7 +50,7 @@ fn pair_state_simulation_test() {
 
     logger.flush();
 
-    let date_str = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let date_str = chrono::Local::now().format("%Y-%m-%d-%H-%M").to_string();
     let log_filename = format!("data/{}/{}_pair_state_simulation_log.csv", date_str, date_str);
     
     // **プロジェクトのルートパスを取得**
