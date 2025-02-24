@@ -1,5 +1,3 @@
-use ndarray::{s};
-
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;

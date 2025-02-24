@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, arr1, arr2, concatenate, Axis, s};
+use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use crate::domain::state::state_trait::StateVector;

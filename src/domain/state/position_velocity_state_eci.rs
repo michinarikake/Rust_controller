@@ -140,7 +140,8 @@ impl Mul<PositionVelocityStateEci> for Array2<f64> {
     }
 }
 
-use ndarray::{arr2};
+#[cfg(test)]
+use ndarray::arr2;
 /// **`PositionVelocityStateEci` の基本演算テスト**
 #[test]
 fn test_position_velocity_state_operations() {

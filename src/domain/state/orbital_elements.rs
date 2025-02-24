@@ -1,4 +1,5 @@
-use ndarray::{Array1, Array2, arr1, s};
+use ndarray::{Array1, arr1};
+#[cfg(test)]
 use ndarray_linalg::assert_close_max;
 use std::ops::{Add, Sub, Mul, Div};
 use std::f64::consts::PI;

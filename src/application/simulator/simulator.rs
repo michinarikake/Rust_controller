@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::domain::dynamics::propagator::{Propagator, EulerPropagator, RungeKutta4Propagator};
+use crate::domain::dynamics::propagator::Propagator;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
@@ -45,9 +45,14 @@ where
     }
 }
 
+#[cfg(test)]
 use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
+#[cfg(test)]
 use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+#[cfg(test)]
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
+#[cfg(test)]
+use crate::domain::dynamics::propagator::RungeKutta4Propagator;
 
 #[test]
 fn test_hcw_dynamics_with_rk4() {

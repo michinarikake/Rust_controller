@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, arr2, s};
+use ndarray::arr2;
 
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use crate::domain::force::force_trait::Force;
@@ -9,16 +9,12 @@ use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 /// **二体問題の連続ダイナミクス**
 #[derive(Debug, Clone)]
 pub struct HcwDynamics {
-    mu: f64, // 地球の重力定数
-    a: f64, // 軌道長半径
     n: f64 // 平均角速度
 }
 
 impl HcwDynamics {
     pub fn new(mu: f64, a: f64) -> Self {
         Self { 
-            mu: mu,
-            a : a,
             n: (mu / a.powf(3.0)).powf(0.5)
          }
     }

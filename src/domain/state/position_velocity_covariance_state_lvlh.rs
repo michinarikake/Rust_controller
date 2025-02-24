@@ -183,7 +183,8 @@ impl Mul<PositionVelocityCovarianceStateLvlh> for Array2<f64> {
 
 
 /// **`PositionVelocityCovarianceStateLvlh` の共分散行列のテスト**
-use ndarray::{arr2};
+#[cfg(test)]
+use ndarray::arr2;
 #[test]
 fn test_position_velocity_covariance_state() {
     let p_full = arr2(&[

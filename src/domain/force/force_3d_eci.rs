@@ -74,7 +74,8 @@ impl Mul<Force3dEci> for Array2<f64> {
     }
 }
 
-use ndarray::{arr2};
+#[cfg(test)]
+use ndarray::arr2;
 
 #[test]
 fn test_Force3dEci_operations() {
