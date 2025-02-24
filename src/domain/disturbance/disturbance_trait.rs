@@ -1,8 +1,8 @@
-use crate::domain::force::force_3d_eci::Force3dEci;
+use crate::domain::force::force_trait::Force;
 use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 
-pub trait DisturbanceCalculator {
-    fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci;
+pub trait DisturbanceCalculator<U: Force> {
+    fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> U;
 }
 
 // pub struct DisturbanceCalculator {

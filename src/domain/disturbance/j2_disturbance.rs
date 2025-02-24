@@ -16,7 +16,7 @@ impl J2Disturbance {
     }
 }
 
-impl DisturbanceCalculator for J2Disturbance {
+impl DisturbanceCalculator<Force3dEci> for J2Disturbance {
     fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci {
         let oe = OrbitalElements::form_from_state(state_eci, self.mu).unwrap();
         let r = state_eci.position_norm();
