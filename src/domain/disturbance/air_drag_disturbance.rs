@@ -77,7 +77,7 @@ impl AirDragDisturbance {
     }
 }
 
-impl DisturbanceCalculator<Force3dEci> for AirDragDisturbance {
+impl DisturbanceCalculator<PositionVelocityStateEci, Force3dEci> for AirDragDisturbance {
     fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci {
         let altitude = state_eci.position_norm() - self.radius;
         let velocity_norm = state_eci.velocity_norm();
