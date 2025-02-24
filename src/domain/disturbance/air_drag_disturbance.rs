@@ -1,7 +1,6 @@
 use super::disturbance_trait::DisturbanceCalculator;
 use crate::domain::{math::formulations::Math, state::position_velocity_state_eci::PositionVelocityStateEci};
 use crate::domain::force::force_3d_eci::Force3dEci;
-use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use std::f64::consts::PI;
 use ndarray::{Array1, arr1};
 
