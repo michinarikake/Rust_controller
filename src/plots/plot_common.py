@@ -31,6 +31,14 @@ def read_log_and_plot(log_filename):
 
     # **2D プロット (p0, p1, p2)**
     plot_2d_data(steps, positions, ["Position X", "Position Y", "Position Z"], "Position Over Time", os.path.join(plot_dir, "Position_Plot.png"))
+    
+    # **2D プロット (p0, p1, p2)**
+    plt.plot(positions[:,0], positions[:,1])
+    plt.xlabel("x")
+    plt.ylabel("y")
+    save_path = os.path.join(plot_dir, "2D_trajectory.png")
+    plt.savefig(save_path)
+    plt.close()
 
     # **2D プロット (v0, v1, v2)**
     plot_2d_data(steps, velocities, ["Velocity X", "Velocity Y", "Velocity Z"], "Velocity Over Time", os.path.join(plot_dir, "Velocity_Plot.png"))
