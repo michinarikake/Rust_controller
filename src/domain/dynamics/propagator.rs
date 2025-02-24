@@ -9,6 +9,7 @@ pub trait Propagator<T: StateVector, U: Force> {
     fn propagate_discrete(&self, state: &T, dynamics: &dyn DiscreteDynamics<T, U>, dt: f64) -> T {
         dynamics.step(state, dt)
     }
+    fn new()-> Self;
 }
 
 /// **オイラー法**
@@ -23,6 +24,10 @@ where
     fn propagate_continuous(&self, state: &T, input: &U, dynamics: &dyn ContinuousDynamics<T, U>, dt: f64) -> T {
         let derivative = dynamics.compute_derivative(state, input);
         state.clone() + derivative * dt
+    }
+
+    fn new() -> Self{
+        Self
     }
 }
 
@@ -42,5 +47,9 @@ where
         let k4 = dynamics.compute_derivative(&(state.clone() + k3.clone() * dt), input);
 
         state.clone() + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (dt / 6.0)
+    }
+
+    fn new() -> Self{
+        Self
     }
 }
