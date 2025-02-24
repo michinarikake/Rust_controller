@@ -25,6 +25,8 @@ pub struct SimulationConfig{
 pub struct SimulationConstants {
     pub mu: f64, // Earth's gravitational parameter (m^3/s^2)
     pub dt: f64,        // Time step (s)
+    pub step: i64,        // Time step (s)
+    pub t0: f64,         // Time start (s)
     pub a: f64,    // Reference semi-major axis (m)
 }
 
@@ -48,7 +50,7 @@ impl SimulatorFactory {
         #[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
         let state = Self::initialize_state(&config.initialization, &config.init_data, config.constants.mu);
 
-        Simulator::new(propagator, dynamics, state, config.constants.dt)
+        Simulator::new(propagator, dynamics, state, config.constants.dt, config.constants.step, config.constants.t0)
     }
 
 

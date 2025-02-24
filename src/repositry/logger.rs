@@ -48,10 +48,10 @@ impl Logger {
     }
 
     /// **バッファにあるデータを一括で出力**
-    pub fn log(&mut self, step: usize) {
+    pub fn log(&mut self, time: f64) {
         if !self.headers_written {
             let headers: Vec<String> = self.log_entries.iter().map(|entry| entry.header()).collect();
-            let header_line = format!("Step,{}\n", headers.join(","));
+            let header_line = format!("time,{}\n", headers.join(","));
             if let Err(e) = self.file.write_all(header_line.as_bytes()) {
                 eprintln!("Failed to write header: {}", e);
             }
@@ -59,7 +59,7 @@ impl Logger {
         }
 
         let log_data: Vec<String> = self.log_entries.iter().map(|entry| entry.output_log()).collect();
-        let log_entry = format!("{},{}\n", step, log_data.join(","));
+        let log_entry = format!("{},{}\n", time, log_data.join(","));
 
         if let Err(e) = self.file.write_all(log_entry.as_bytes()) {
             eprintln!("Failed to write log entry: {}", e);

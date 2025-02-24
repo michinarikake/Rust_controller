@@ -16,6 +16,8 @@ where
     dynamics: D,
     state: T,
     dt: f64,
+    pub step: i64,
+    pub t: f64,
     _marker: PhantomData<U>,
 }
 
@@ -26,18 +28,21 @@ where
     P: Propagator<T, U>,
     D: ContinuousDynamics<T, U>,
 {
-    pub fn new(propagator: P, dynamics: D, initial_state: T, dt: f64) -> Self {
+    pub fn new(propagator: P, dynamics: D, initial_state: T, dt: f64, step: i64, t0: f64) -> Self {
         Self {
             propagator,
             dynamics,
             state: initial_state,
             dt,
+            step,
+            t: t0,
             _marker: PhantomData,
         }
     }
 
     pub fn update(&mut self, input: &U) {
         self.state = self.propagator.propagate_continuous(&self.state, input, &self.dynamics, self.dt);
+        self.t += (self.step as f64) * self.dt;
     }
 
     pub fn get_state(&self) -> &T {
@@ -65,7 +70,7 @@ fn test_hcw_dynamics_with_rk4() {
     let propagator = RungeKutta4Propagator;
     let dt = 60.0; // タイムステップ（秒）
 
-    let mut simulator = Simulator::new(propagator, dynamics, initial_state, dt);
+    let mut simulator = Simulator::new(propagator, dynamics, initial_state, dt, 1000, 0.0);
 
     for _ in 0..10 {
         simulator.update(&external_force);

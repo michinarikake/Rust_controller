@@ -18,13 +18,13 @@ fn pair_state_simulation_test() {
 
     let mut simulator = SimulatorFactory::create_simulator(&config);
 
-    for step in 0..10000 {
+    for _ in 0..simulator.step {
         simulator.update(&external_force);
 
         logger.add_entry(simulator.get_state().clone());
         logger.add_entry(external_force.clone());
 
-        logger.log(step);
+        logger.log(simulator.t);
     }
 
     logger.flush();

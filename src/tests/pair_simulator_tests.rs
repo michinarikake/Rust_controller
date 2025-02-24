@@ -43,7 +43,7 @@ fn pair_state_simulation_test() {
     let propagator = RungeKutta4Propagator;
     let dt = 0.1;
 
-    let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt);
+    let mut simulator = Simulator::new(propagator, dynamics, initial_state.clone(), dt, 10000, 0.0);
 
     // シミュレーション実行
     for step in 0..100000 {
@@ -53,7 +53,7 @@ fn pair_state_simulation_test() {
         logger.add_entry(simulator.get_state().clone());
         logger.add_entry(external_force.clone());
 
-        logger.log(step);
+        logger.log(step as f64 * dt);
     }
 
     logger.flush();

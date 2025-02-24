@@ -79,6 +79,8 @@ pub fn default_simulation_config() -> SimulationConfig {
         constants: SimulationConstants {
             mu: 398600.4418, // Earth's gravitational parameter (m^3/s^2)
             dt: 10.0,        // Time step (s)
+            step: 10000,     // Time step num
+            t0: 0.0,
             a: 7000000.0,    // Reference semi-major axis (m)
         },
     }
