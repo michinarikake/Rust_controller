@@ -3,6 +3,8 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use super::force_trait::Force;
 use crate::repositry::loggable_trait::Loggable;
+use crate::domain::math::formulations::Math;
+use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 
 #[derive(Debug, Clone)]
 pub struct Force3dLvlh{
@@ -13,6 +15,11 @@ impl Force3dLvlh{
     pub fn form_from_list(force_list: [f64;3]) -> Self {
         let force = arr1(&[force_list[0], force_list[1], force_list[2]]);
         Self {force}
+    }
+
+    pub fn form_from_eci(force: &Force3dLvlh, state_eci: &PositionVelocityStateEci) -> Self{
+        let force = Math::mat_eci2lvlh(&state_eci.position(), &state_eci.velocity()) * force;
+        Self {force: force.get_vector().clone()}
     }
 }
 
@@ -45,6 +52,13 @@ impl Add for Force3dLvlh {
     }
 }
 
+impl Add for &Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn add(self, rhs: &Force3dLvlh) -> Force3dLvlh {
+        self.add_vec(&rhs)
+    }
+}
+
 impl Sub for Force3dLvlh {
     type Output = Force3dLvlh;
     fn sub(self, rhs: Force3dLvlh) -> Force3dLvlh {
@@ -52,7 +66,21 @@ impl Sub for Force3dLvlh {
     }
 }
 
+impl Sub for &Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn sub(self, rhs: &Force3dLvlh) -> Force3dLvlh {
+        self.sub_vec(&rhs)
+    }
+}
+
 impl Mul<f64> for Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn mul(self, scalar: f64) -> Force3dLvlh {
+        self.mul_scalar(scalar)
+    }
+}
+
+impl Mul<f64> for &Force3dLvlh {
     type Output = Force3dLvlh;
     fn mul(self, scalar: f64) -> Force3dLvlh {
         self.mul_scalar(scalar)
@@ -66,9 +94,24 @@ impl Div<f64> for Force3dLvlh {
     }
 }
 
+impl Div<f64> for &Force3dLvlh {
+    type Output = Force3dLvlh;
+    fn div(self, scalar: f64) -> Force3dLvlh {
+        self.div_scalar(scalar)
+    }
+}
+
 impl Mul<Force3dLvlh> for Array2<f64> {
     type Output = Force3dLvlh;
     fn mul(self, rhs: Force3dLvlh) -> Force3dLvlh {
+        let result = self.dot(rhs.get_vector());
+        Force3dLvlh::form_from_array(result)
+    }
+}
+
+impl Mul<&Force3dLvlh> for Array2<f64> {
+    type Output = Force3dLvlh;
+    fn mul(self, rhs: &Force3dLvlh) -> Force3dLvlh {
         let result = self.dot(rhs.get_vector());
         Force3dLvlh::form_from_array(result)
     }

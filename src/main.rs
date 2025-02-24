@@ -4,7 +4,7 @@ use satellite_simulator::domain::force::force_3d_eci::Force3dEci;
 use satellite_simulator::repositry::logger::Logger;
 
 fn main() {
-    let log_filename = "test_pair_state_simulation_log.csv";
+    let log_filename = "simulation_log.csv";
 
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
@@ -13,13 +13,13 @@ fn main() {
 
     let mut simulator = SimulatorFactory::create_simulator(&config);
 
-    for step in 0..10000 {
+    for _ in 0..simulator.step {
         simulator.update(&external_force);
 
         logger.add_entry(simulator.get_state().clone());
         logger.add_entry(external_force.clone());
 
-        logger.log(step);
+        logger.log(simulator.t);
     }
 
     logger.flush();

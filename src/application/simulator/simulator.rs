@@ -4,6 +4,8 @@ use crate::domain::dynamics::propagator::Propagator;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
+use crate::domain::disturbance::disturbance_trait::DisturbanceCalculator;
+use ndarray::arr1;
 
 pub struct Simulator<T, U, P, D>
 where
@@ -15,6 +17,7 @@ where
     propagator: P,
     dynamics: D,
     state: T,
+    disturbances: Vec<Box<dyn DisturbanceCalculator<T, U>>>,
     dt: f64,
     pub step: i64,
     pub t: f64,
@@ -35,15 +38,31 @@ where
             state: initial_state,
             dt,
             step,
+            disturbances: Vec::new(),
             t: t0,
             _marker: PhantomData,
         }
     }
 
     pub fn update(&mut self, input: &U) {
-        self.state = self.propagator.propagate_continuous(&self.state, input, &self.dynamics, self.dt);
-        self.t += (self.step as f64) * self.dt;
+        let sum = input.add_vec(&self.calc_disturbance());
+        self.state = self.propagator.propagate_continuous(&self.state, &sum, &self.dynamics, self.dt);
+        self.t += self.dt;
     }
+
+    pub fn add_disturbance(&mut self, disturbance: Box<dyn DisturbanceCalculator<T, U>>) {
+        self.disturbances.push(disturbance);
+    }
+
+    fn calc_disturbance(&self) -> U {
+        self.disturbances.iter()
+            .fold(
+                U::form_from_array(arr1(&[0.0, 0.0, 0.0])), 
+                |acc, disturbance| 
+                acc.add_vec(&disturbance.calc_force(&self.state))
+            )
+    }
+    
 
     pub fn get_state(&self) -> &T {
         &self.state
