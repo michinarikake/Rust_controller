@@ -78,7 +78,7 @@ impl Mul<Force3dEci> for Array2<f64> {
 use ndarray::arr2;
 
 #[test]
-fn test_Force3dEci_operations() {
+fn test_force3d_eci_operations() {
     let f1 = Force3dEci::form_from_list([1.0, 2.0, 3.0]);
     let f2 = Force3dEci::form_from_list([0.5, -1.0, 2.0]);
 
@@ -100,7 +100,7 @@ fn test_Force3dEci_operations() {
 }
 
 #[test]
-fn test_Force3dEci_matrix_multiplication() {
+fn test_force3d_eci_matrix_multiplication() {
     let f = Force3dEci::form_from_list([1.0, 2.0, 3.0]);
 
     let transform_matrix = arr2(&[

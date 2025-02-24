@@ -78,7 +78,7 @@ impl Mul<Force3dLvlh> for Array2<f64> {
 use ndarray::arr2;
 
 #[test]
-fn test_Force3dLvlh_operations() {
+fn test_force3d_lvlh_operations() {
     let f1 = Force3dLvlh::form_from_list([1.0, 2.0, 3.0]);
     let f2 = Force3dLvlh::form_from_list([0.5, -1.0, 2.0]);
 
@@ -100,7 +100,7 @@ fn test_Force3dLvlh_operations() {
 }
 
 #[test]
-fn test_Force3dLvlh_matrix_multiplication() {
+fn test_force3d_lvlh_matrix_multiplication() {
     let f = Force3dLvlh::form_from_list([1.0, 2.0, 3.0]);
 
     let transform_matrix = arr2(&[

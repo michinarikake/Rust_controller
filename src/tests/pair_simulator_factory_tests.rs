@@ -1,9 +1,14 @@
-use satellite_simulator::settings::simulation_config::default_simulation_config;
-use satellite_simulator::factory::simulator_factory::SimulatorFactory;
-use satellite_simulator::domain::force::force_3d_eci::Force3dEci;
-use satellite_simulator::repositry::logger::Logger;
+#[cfg(test)]
+use crate::settings::simulation_config::default_simulation_config;
+#[cfg(test)]
+use crate::factory::simulator_factory::SimulatorFactory;
+#[cfg(test)]
+use crate::domain::force::force_3d_eci::Force3dEci;
+#[cfg(test)]
+use crate::repositry::logger::Logger;
 
-fn main() {
+#[test]
+fn pair_state_simulation_test() {
     let log_filename = "test_pair_state_simulation_log.csv";
 
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");

@@ -9,7 +9,7 @@ pub trait Propagator<T: StateVector, U: Force> {
     fn propagate_discrete(&self, state: &T, dynamics: &dyn DiscreteDynamics<T, U>, dt: f64) -> T {
         dynamics.step(state, dt)
     }
-    fn new()-> Self;
+    fn new(_: std::marker::PhantomData<(T, U)>) -> Self;
 }
 
 /// **オイラー法**
@@ -26,7 +26,7 @@ where
         state.clone() + derivative * dt
     }
 
-    fn new() -> Self{
+    fn new(_: std::marker::PhantomData<(T, U)>) -> Self {
         Self
     }
 }
@@ -49,7 +49,7 @@ where
         state.clone() + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (dt / 6.0)
     }
 
-    fn new() -> Self{
+    fn new(_: std::marker::PhantomData<(T, U)>) -> Self {
         Self
     }
 }
