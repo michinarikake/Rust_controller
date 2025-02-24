@@ -9,7 +9,7 @@ use std::f64::consts::PI;
 use ndarray::{Array1, arr1};
 use statrs::function::erf::erf;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Surface {
     pub normal_direction: Array1<f64>,
     pub area_m2: f64,

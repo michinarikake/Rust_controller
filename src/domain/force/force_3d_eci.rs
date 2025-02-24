@@ -2,7 +2,6 @@ use ndarray::{Array1, Array2, arr1};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::{force_3d_lvlh::Force3dLvlh, force_trait::Force};
-use crate::domain::state::state_trait::StateVector;
 use crate::repositry::loggable_trait::Loggable;
 use crate::domain::math::formulations::Math;
 use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
