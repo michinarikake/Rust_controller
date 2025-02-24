@@ -1,8 +1,11 @@
 use ndarray::{Array1, Array2, arr1};
 use std::ops::{Add, Sub, Mul, Div};
 
-use super::force_trait::Force;
+use super::{force_3d_lvlh::Force3dLvlh, force_trait::Force};
+use crate::domain::state::state_trait::StateVector;
 use crate::repositry::loggable_trait::Loggable;
+use crate::domain::math::formulations::Math;
+use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 
 #[derive(Debug, Clone)]
 pub struct Force3dEci{
@@ -12,6 +15,11 @@ pub struct Force3dEci{
 impl Force3dEci{
     pub fn form_from_list(force_list: [f64;3]) -> Self {
         let force = arr1(&[force_list[0], force_list[1], force_list[2]]);
+        Self {force}
+    }
+
+    pub fn form_from_lvlh(force: Force3dLvlh, state_eci:PositionVelocityStateEci) -> Self{
+        let force = Math::mat_lvlh2eci(&state_eci.position(), &state_eci.velocity()) * force;
         Self {force}
     }
 }
