@@ -126,7 +126,7 @@ impl Mul<PositionVelocityStateLvlh> for Array2<f64> {
 }
 
 #[cfg(test)]
-use ndarray::{arr2};
+use ndarray::arr2;
 /// **`PositionVelocityStateLvlh` の基本演算テスト**
 #[test]
 fn test_position_velocity_state_operations() {
