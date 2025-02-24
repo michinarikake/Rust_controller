@@ -7,6 +7,8 @@ use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocit
 use crate::repositry::loggable_trait::Loggable;
 use crate::domain::math::formulations::Math;
 
+use super::orbital_elements::OrbitalElements;
+
 #[derive(Debug, Clone)]
 pub struct PositionVelocityPairStateEci {
     state: Array1<f64>, // [chief_px, chief_py, chief_pz, chief_vx, chief_vy, chief_vz, 
@@ -31,6 +33,12 @@ impl PositionVelocityPairStateEci {
              deputy[0], deputy[1], deputy[2], deputy[3], deputy[4], deputy[5]]
             );
         Self { state }
+    }
+
+    pub fn form_from_orbital_elements(chief_oe: OrbitalElements, deputy_oe: OrbitalElements, mu: f64) -> Self {
+        let chief = PositionVelocityStateEci::form_from_orbital_elements(&chief_oe, mu);
+        let deputy = PositionVelocityStateEci::form_from_orbital_elements(&deputy_oe, mu);
+        PositionVelocityPairStateEci::form_from_state(chief, deputy)
     }
 
     pub fn chief(&self) -> PositionVelocityStateEci {
