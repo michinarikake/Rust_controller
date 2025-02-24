@@ -1,15 +1,16 @@
+use std::any::Any;
+use std::ops::{Add, Sub, Div, Mul};
+
 #[allow(unused)]
 use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci, Surface};
 #[allow(unused)]
 use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
+use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::dynamics::propagator::Propagator;
-use crate::domain::state::orbital_elements::OrbitalElements;
-// use crate::domain::state::position_velocity_covariance_state_lvlh::PositionVelocityCovarianceStateLvlh;
-use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::application::simulator::simulator::Simulator;
-use crate::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
+use crate::domain::state::state_trait::StateVector;
+use crate::domain::force::force_trait::Force;
+use crate::factory::initialization_wrapper::{InitializeState, InitializeDynamics, DisturbanceInitializer};
 
 #[derive(Debug)]
 pub enum InitializationTypeEnum {
@@ -52,147 +53,36 @@ pub struct SimulationConstants {
 pub struct SimulatorFactory;
 
 impl SimulatorFactory {
-    pub fn create_simulator(
+    pub fn create_simulator<T, U, P, D>(
         config: &SimulationConfig,
-    ) -> Simulator<StateType, ForceType, PropagatorType, DynamicsType> {
-        // `type alias` は `struct` なので、インスタンス化が必要
-        let propagator = PropagatorType::new(std::marker::PhantomData::<(StateType, ForceType)>);
-        let dynamics = DynamicsType::new(config.constants.mu);
-
-        // `DynamicsType` に基づいて適切な初期化関数を呼ぶ
-        #[cfg(feature = "pair")]
-        let state = Self::initialize_pair_state(&config.initialization, &config.init_data, config.constants.mu);
-        
-        #[cfg(feature = "hcw")]
-        let state = Self::initialize_relative_state(&config.initialization, &config.init_data);
-
-        #[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-        let state = Self::initialize_state(&config.initialization, &config.init_data, config.constants.mu);
-
-        let simulator = Simulator::new(propagator, dynamics, state, config.constants.dt, config.constants.step, config.constants.t0);
-        SimulatorFactory::add_disturbance(simulator, config)
-    }
-
-    fn add_disturbance
-    (
-        mut simulator: Simulator<StateType, ForceType, PropagatorType, DynamicsType>,
-        config: &SimulationConfig,
-    ) -> Simulator<StateType, ForceType, PropagatorType, DynamicsType>
+    ) -> Box<dyn Any>
+    where 
+        T: StateVector + Add<Output = T> + Sub<Output = T> + Mul<f64, Output = T> + Div<f64, Output = T> + Clone + InitializeState + DisturbanceInitializer<T, U> + 'static,
+        U: Force + Add<Output = U> + Sub<Output = U> + Mul<f64, Output = U> + Div<f64, Output = U> + Clone + 'static,
+        P: Propagator<T, U> + 'static,
+        D: ContinuousDynamics<T, U> + InitializeDynamics + 'static,
     {
-        let disturbances = config.disturbances.clone();
+        let propagator = P::new(std::marker::PhantomData::<(T, U)>);
+        let dynamics = D::initialize(&config);
 
-        #[cfg(feature = "pair")]
-        for disturbance_type in disturbances.iter(){
-            match disturbance_type{
-                DisturbanceEnum::AirDrag => {
-                    simulator.add_disturbance(Box::new(AirDragStatePairEci::new(
-                        config.constants.molecular_weight,
-                        config.constants.wall_temperature,
-                        config.constants.molecular_temperature,
-                        config.constants.mass,
-                        config.constants.surfaces.clone(),
-                        config.constants.boltzmann_constant,
-                        config.constants.radius,
-                    )));
-                }
-                DisturbanceEnum::J2 => {
-                    simulator.add_disturbance(Box::new(J2StatePairEci::new(
-                        config.constants.j2,
-                        config.constants.mu,
-                        config.constants.radius,
-                    )));
-                }
-            }
-        }
+        let state = T::initialize(&config);  // T に応じた初期化を呼び出す
 
-        #[cfg(feature = "hcw")]
-        println!("No Available Disturbance Model");
+        let simulator: Simulator<T, U, P, D> = Simulator::new(propagator, dynamics, state, config.constants.dt, config.constants.step, config.constants.t0);
+        Box::new(SimulatorFactory::add_disturbance(simulator, config))
+    }
 
-        #[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-        for disturbance_type in disturbances.iter(){
-            match disturbance_type{
-                DisturbanceEnum::AirDrag => {
-                    simulator.add_disturbance(Box::new(AirDragStateEci::new(
-                        config.constants.molecular_weight,
-                        config.constants.wall_temperature,
-                        config.constants.molecular_temperature,
-                        config.constants.mass,
-                        config.constants.surfaces.clone(),
-                        config.constants.boltzmann_constant,
-                        config.constants.radius,
-                    )));
-                }
-                DisturbanceEnum::J2 => {
-                    simulator.add_disturbance(Box::new(J2StateEci::new(
-                        config.constants.j2,
-                        config.constants.mu,
-                        config.constants.radius,
-                    )));
-                }
-            }
-        }
+    fn add_disturbance<T, U, P, D>(
+        mut simulator: Simulator<T, U, P, D>,
+        config: &SimulationConfig,
+    ) -> Simulator<T, U, P, D>
+    where
+        T: StateVector + Add<Output = T> + Sub<Output = T> + Mul<f64, Output = T> + Div<f64, Output = T> + Clone + InitializeState + DisturbanceInitializer<T, U>,
+        U: Force + Add<Output = U> + Sub<Output = U> + Mul<f64, Output = U> + Div<f64, Output = U> + Clone,
+        P: Propagator<T, U>, 
+        D: ContinuousDynamics<T, U> + InitializeDynamics,
+    {
+        T::initialize_disturbances(config, &mut simulator);
         simulator
-
     }
-
-
-    #[allow(unused)]
-    fn initialize_state(init_type: &InitializationTypeEnum, init_data: &[f64], mu: f64) -> PositionVelocityStateEci {
-        match init_type {
-            InitializationTypeEnum::PositionVelocity => {
-                PositionVelocityStateEci::form_from_list(
-                    [init_data[0], init_data[1], init_data[2]],
-                    [init_data[3], init_data[4], init_data[5]],
-                )
-            }
-            InitializationTypeEnum::OrbitalElements => {
-                let elements = OrbitalElements::form_from_elements(
-                    init_data[0], init_data[1], init_data[2],
-                    init_data[3], init_data[4], init_data[5],
-                )
-                    .expect("Invalid orbital elements");
-                PositionVelocityStateEci::form_from_orbital_elements(&elements, mu)
-            }
-            _ => panic!("Invalid single state initialization"),
-        }
-    }
-
-    #[allow(unused)]
-    fn initialize_pair_state(init_type: &InitializationTypeEnum, init_data: &[f64], mu: f64) -> PositionVelocityPairStateEci {
-        match init_type {
-            InitializationTypeEnum::PositionVelocity => {
-                PositionVelocityPairStateEci::form_from_list(
-                    [init_data[0], init_data[1], init_data[2], init_data[3], init_data[4], init_data[5]],
-                    [init_data[6], init_data[7], init_data[8], init_data[9], init_data[10], init_data[11]],
-                )
-            }
-            InitializationTypeEnum::OrbitalElements => {
-                let chief = OrbitalElements::form_from_elements(
-                    init_data[0], init_data[1], init_data[2], init_data[3],
-                    init_data[4], init_data[5]
-                    )
-                    .expect("Invalid chief orbital elements");
-                let deputy = OrbitalElements::form_from_elements(
-                    init_data[6], init_data[7], init_data[8], init_data[9], 
-                    init_data[10], init_data[11]
-                    )
-                    .expect("Invalid deputy orbital elements");
-                PositionVelocityPairStateEci::form_from_orbital_elements(chief, deputy, mu)
-            }
-            _ => panic!("Invalid pair state initialization"),
-        }
-    }
-
-    #[allow(unused)]
-    fn initialize_relative_state(init_type: &InitializationTypeEnum, init_data: &[f64]) -> PositionVelocityStateLvlh {
-        match init_type {
-            InitializationTypeEnum::RelativePositionVelocity => {
-                PositionVelocityStateLvlh::form_from_list(
-                    [init_data[0], init_data[1], init_data[2]],
-                    [init_data[3], init_data[4], init_data[5]],
-                )
-            }
-            _ => panic!("Invalid relative state initialization"),
-        }
-    }
+    
 }

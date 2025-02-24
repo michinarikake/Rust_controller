@@ -6,6 +6,10 @@ use crate::factory::simulator_factory::SimulatorFactory;
 use crate::domain::force::force_3d_eci::Force3dEci;
 #[cfg(test)]
 use crate::repositry::logger::Logger;
+#[cfg(test)]
+use crate::application::simulator::simulator::Simulator;
+#[cfg(test)]
+use crate::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
 
 #[test]
 fn pair_state_simulation_test() {
@@ -16,7 +20,10 @@ fn pair_state_simulation_test() {
     let config = default_simulation_config();
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
 
-    let mut simulator = SimulatorFactory::create_simulator(&config);
+    let mut simulator_box = SimulatorFactory::create_simulator::<StateType, ForceType, PropagatorType, DynamicsType>(&config);
+    let simulator = simulator_box
+        .downcast_mut::<Simulator<StateType, ForceType, PropagatorType, DynamicsType>>()
+        .expect("Failed to cast Box<dyn Any> to Simulator");
 
     for _ in 0..simulator.step {
         simulator.update(&external_force);
