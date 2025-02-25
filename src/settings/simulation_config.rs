@@ -36,24 +36,24 @@ use ndarray::arr1;
 
 // pair,simgle : eci
 // hcw : lvlh
-// pub type StateType = PositionVelocityPairStateEci;
-pub type StateType = PositionVelocityStateLvlh;
+pub type StateType = PositionVelocityPairStateEci;
+// pub type StateType = PositionVelocityStateLvlh;
 // pub type StateType = PositionVelocityStateEci;
 
-pub type ForceType = Force3dLvlh;
-// pub type ForceType = Force3dEci;
+// pub type ForceType = Force3dLvlh;
+pub type ForceType = Force3dEci;
 
 // pub type PropagatorType = EulerPropagator;
 pub type PropagatorType = RungeKutta4Propagator;
 
-// pub type DynamicsType = PairTwoBodyDynamics;
-pub type DynamicsType = HcwDynamics;
+pub type DynamicsType = PairTwoBodyDynamics;
+// pub type DynamicsType = HcwDynamics;
 // pub type DynamicsType = TwoBodyDynamics;
 
 pub fn default_simulation_config() -> SimulationConfig {
-    //  default_pair_simulation_config()
+     default_pair_simulation_config()
     //  default_single_simulation_config()
-     default_hcw_simulation_config()
+    //  default_hcw_simulation_config()
 }
 
 pub fn default_pair_simulation_config() -> SimulationConfig {
@@ -78,7 +78,7 @@ pub fn default_pair_simulation_config() -> SimulationConfig {
             0.28869219, // Longitude of ascending node (rad)
             0.0,        // True anomaly (rad)
             6928000.0,  // Semi-major axis (m)
-            0.001,      // Eccentricity
+            0.00,      // Eccentricity
             1.57079633, // Inclination (rad)
             0.0,        // Argument of perigee (rad)
             0.28869219, // Longitude of ascending node (rad)
