@@ -20,6 +20,9 @@ use crate::domain::force::force_3d_eci::Force3dEci;
 use std::process::Command;
 #[cfg(test)]
 use std::env;
+#[cfg(test)]
+use crate::domain::state::state_converter::StateConverter;
+
 
 
 #[test]
@@ -30,16 +33,15 @@ fn pair_state_simulation_test() {
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
     // 初期状態
-    let mu = 3.986004 * 10f64.powi(14);
     let oe1 = OrbitalElements::form_from_elements(6928000.0, 0.001, 1.57079633, 0.0, 0.28869219, 0.0).unwrap();
     let oe2 = OrbitalElements::form_from_elements(6928000.0, 0.001, 1.57079733, 0.0, 0.28869219, 0.0).unwrap();
-    let initial_state1 = PositionVelocityStateEci::form_from_orbital_elements(&oe1, mu);
-    let initial_state2 = PositionVelocityStateEci::form_from_orbital_elements(&oe2, mu);
+    let initial_state1: PositionVelocityStateEci = oe1.convert();
+    let initial_state2: PositionVelocityStateEci = oe2.convert();
     println!("{}", initial_state1.get_vector());
     println!("{}", initial_state2.get_vector());
-    let initial_state = PositionVelocityPairStateEci::form_from_state(initial_state1, initial_state2);
+    let initial_state: PositionVelocityPairStateEci = vec![initial_state1, initial_state2].convert();
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
-    let dynamics = PairTwoBodyDynamics::new(mu);
+    let dynamics = PairTwoBodyDynamics::new();
     let propagator = RungeKutta4Propagator;
     let dt = 0.1;
 

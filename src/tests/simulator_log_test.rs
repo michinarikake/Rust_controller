@@ -28,7 +28,7 @@ fn simulator_log_test() {
         [0.1, 0.2, 0.3],
     );
     let external_force = Force3dLvlh::form_from_list([0.0, 0.0, 0.0]);
-    let dynamics = HcwDynamics::new(398600.4418, 7000.0);
+    let dynamics = HcwDynamics::new(7.000e6);
     let propagator = RungeKutta4Propagator;
     let dt = 10.0;
 

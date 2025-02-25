@@ -18,6 +18,8 @@ use crate::domain::force::force_3d_eci::Force3dEci;
 use std::process::Command;
 #[cfg(test)]
 use std::env;
+#[cfg(test)]
+use crate::domain::state::state_converter::StateConverter;
 
 
 #[test]
@@ -28,12 +30,11 @@ fn single_state_simulation_test() {
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
     // 初期状態
-    let mu = 3.986004 * 10f64.powi(14);
     let oe1 = OrbitalElements::form_from_elements(6928000.0, 0.001, 1.57079633, 0.0, 0.28869219, 0.0).unwrap();
-    let initial_state = PositionVelocityStateEci::form_from_orbital_elements(&oe1, mu);
+    let initial_state: PositionVelocityStateEci = oe1.convert();
     println!("{}", initial_state.get_vector());
     let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
-    let dynamics = TwoBodyDynamics::new(mu);
+    let dynamics = TwoBodyDynamics::new();
     let propagator = RungeKutta4Propagator;
     let dt = 1.0;
 

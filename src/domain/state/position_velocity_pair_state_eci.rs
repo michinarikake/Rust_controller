@@ -3,6 +3,8 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use crate::domain::state::state_trait::StateVector;
 use crate::repositry::loggable_trait::Loggable;
+// FIXME ここのincludeは本来不要
+// FIXME LOGGERを分離する
 use super::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use super::state_converter::StateConverter;
 

@@ -16,7 +16,7 @@ use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
 use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci};
 use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
-use crate::settings::constants::CONSTANTS;
+use crate::domain::state::state_converter::StateConverter;
 
 // この実装はここでいいのか...?
 pub trait InitializeState {
@@ -27,7 +27,6 @@ impl InitializeState for PositionVelocityPairStateEci {
     fn initialize(config: &SimulationConfig) -> Self {
         let init_data = &config.init_data;
         let init_type = &config.initialization;
-        let mu = CONSTANTS.mu;
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
                 PositionVelocityPairStateEci::form_from_list(
@@ -46,7 +45,7 @@ impl InitializeState for PositionVelocityPairStateEci {
                     init_data[10], init_data[11]
                     )
                     .expect("Invalid deputy orbital elements");
-                PositionVelocityPairStateEci::form_from_orbital_elements(chief, deputy, mu)
+                vec![chief, deputy].convert()
             }
             _ => panic!("Invalid pair state initialization"),
         }
@@ -73,7 +72,6 @@ impl InitializeState for PositionVelocityStateEci {
     fn initialize(config: &SimulationConfig) -> Self {
         let init_data = &config.init_data;
         let init_type = &config.initialization;
-        let mu = CONSTANTS.mu;
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
                 PositionVelocityStateEci::form_from_list(
@@ -87,7 +85,7 @@ impl InitializeState for PositionVelocityStateEci {
                     init_data[3], init_data[4], init_data[5],
                 )
                     .expect("Invalid orbital elements");
-                PositionVelocityStateEci::form_from_orbital_elements(&elements, mu)
+                elements.convert()
             }
             _ => panic!("Invalid single state initialization"),
         }

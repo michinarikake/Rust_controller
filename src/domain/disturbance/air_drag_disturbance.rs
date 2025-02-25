@@ -1,5 +1,6 @@
 use super::disturbance_trait::DisturbanceCalculator;
 use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::domain::state::state_converter::StateConverter;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::{math::formulations::Math, state::position_velocity_state_eci::PositionVelocityStateEci};
 use crate::domain::force::force_3d_eci::Force3dEci;
@@ -201,11 +202,15 @@ impl AirDragStatePairEci {
 
 impl AirDragForInertiaState<PositionVelocityPairStateEci> for AirDragStatePairEci {
     fn get_position(&self, state: &PositionVelocityPairStateEci) -> Array1<f64> {
-        state.deputy().position()
+        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
+        let state_deputy = &state_vec[0];
+        state_deputy.position()
     }
 
     fn get_velocity(&self, state: &PositionVelocityPairStateEci) -> Array1<f64> {
-        state.deputy().velocity()
+        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
+        let state_deputy = &state_vec[0];
+        state_deputy.velocity()
     }
 
     fn get_radius(&self) -> f64 {

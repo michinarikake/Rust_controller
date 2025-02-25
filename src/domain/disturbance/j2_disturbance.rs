@@ -6,6 +6,7 @@ use crate::domain::force::force_3d_eci::Force3dEci;
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
+use crate::domain::state::state_converter::StateConverter;
 use crate::settings::constants::CONSTANTS;
 use ndarray::{Array1, arr1};
 
@@ -21,7 +22,7 @@ pub trait J2ForInertiaState<T: StateVector> {
         let r = self.get_position(state).dot(&self.get_position(state)).sqrt();
         let factor = 3.0 * self.get_mu() * self.get_j2() * self.get_radius().powi(2) / (2.0 * r.powi(4));
 
-        let oe = OrbitalElements::form_from_state(&self.get_state_eci(state), self.get_mu()).unwrap();
+        let oe: &OrbitalElements = &self.get_state_eci(state).convert();
         let theta = oe.nu_rad + oe.omega_rad;
 
         let fx = factor * (3.0 * theta.sin().powi(2) * oe.i_rad.sin().powi(2) - 1.0);
@@ -95,11 +96,14 @@ impl J2StatePairEci {
 
 impl J2ForInertiaState<PositionVelocityPairStateEci> for J2StatePairEci {
     fn get_position(&self, state: &PositionVelocityPairStateEci) -> Array1<f64> {
-        state.deputy().position()
+        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
+        let state_deputy = &state_vec[0];
+        state_deputy.position()
     }
 
     fn get_state_eci(&self, state: &PositionVelocityPairStateEci) -> PositionVelocityStateEci {
-        state.deputy().clone()
+        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
+        state_vec[0].clone() // deputy
     }
 
     fn get_radius(&self) -> f64 {

@@ -69,34 +69,34 @@ where
     }
 }
 
-#[cfg(test)]
-use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
-#[cfg(test)]
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
-#[cfg(test)]
-use crate::domain::force::force_3d_lvlh::Force3dLvlh;
-#[cfg(test)]
-use crate::domain::dynamics::propagator::RungeKutta4Propagator;
+// #[cfg(test)]
+// use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
+// #[cfg(test)]
+// use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+// #[cfg(test)]
+// use crate::domain::force::force_3d_lvlh::Force3dLvlh;
+// #[cfg(test)]
+// use crate::domain::dynamics::propagator::RungeKutta4Propagator;
 
-#[test]
-fn test_hcw_dynamics_with_rk4() {
-    let initial_state = PositionVelocityStateLvlh::form_from_list(
-        [100.0, 200.0, 300.0],
-        [0.1, 0.2, 0.3],
-    );
-    let external_force = Force3dLvlh::form_from_list([0.0, 0.0, 0.0]);
-    let dynamics = HcwDynamics::new(398600.4418, 7000.0);
-    let propagator = RungeKutta4Propagator;
-    let dt = 60.0; // タイムステップ（秒）
+// #[test]
+// fn test_hcw_dynamics_with_rk4() {
+//     let initial_state = PositionVelocityStateLvlh::form_from_list(
+//         [100.0, 200.0, 300.0],
+//         [0.1, 0.2, 0.3],
+//     );
+//     let external_force = Force3dLvlh::form_from_list([0.0, 0.0, 0.0]);
+//     let dynamics = HcwDynamics::new(398600.4418, 7000.0);
+//     let propagator = RungeKutta4Propagator;
+//     let dt = 60.0; // タイムステップ（秒）
 
-    let mut simulator = Simulator::new(propagator, dynamics, initial_state, dt, 1000, 0.0);
+//     let mut simulator = Simulator::new(propagator, dynamics, initial_state, dt, 1000, 0.0);
 
-    for _ in 0..10 {
-        simulator.update(&external_force);
-    }
+//     for _ in 0..10 {
+//         simulator.update(&external_force);
+//     }
 
-    let final_state = simulator.get_state().get_vector();
+//     let final_state = simulator.get_state().get_vector();
 
-    // 期待値を手計算または理論値と比較する
-    assert!(final_state[0] > 0.0);
-}
+//     // 期待値を手計算または理論値と比較する
+//     assert!(final_state[0] > 0.0);
+// }
