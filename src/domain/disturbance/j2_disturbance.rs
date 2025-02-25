@@ -6,6 +6,7 @@ use crate::domain::force::force_3d_eci::Force3dEci;
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
+use crate::settings::constants::CONSTANTS;
 use ndarray::{Array1, arr1};
 
 
@@ -39,8 +40,11 @@ pub struct J2StateEci {
 }
 
 impl J2StateEci {
-    pub fn new(j2: f64, mu: f64, radius: f64) -> Self {
-        Self { j2, mu, radius }
+    pub fn new() -> Self {
+        Self {
+             j2: CONSTANTS.j2,
+             mu: CONSTANTS.mu, 
+             radius: CONSTANTS.radius }
     }
 }
 
@@ -81,8 +85,11 @@ pub struct J2StatePairEci {
 }
 
 impl J2StatePairEci {
-    pub fn new(j2: f64, mu: f64, radius: f64) -> Self {
-        Self { j2, mu, radius }
+    pub fn new() -> Self {
+        Self {
+             j2: CONSTANTS.j2,
+             mu: CONSTANTS.mu, 
+             radius: CONSTANTS.radius }
     }
 }
 

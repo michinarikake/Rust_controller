@@ -4,6 +4,7 @@ use crate::domain::state::state_trait::StateVector;
 use crate::domain::{math::formulations::Math, state::position_velocity_state_eci::PositionVelocityStateEci};
 use crate::domain::force::force_3d_eci::Force3dEci;
 use crate::domain::force::force_trait::Force;
+use crate::settings::constants::CONSTANTS;
 
 use std::f64::consts::PI;
 use ndarray::{Array1, arr1};
@@ -120,8 +121,6 @@ impl AirDragStateEci {
         molecular_temperature: f64,
         mass: f64,
         surfaces: Vec<Surface>,
-        boltzmann_constant: f64,
-        radius: f64
     ) -> Self {
         Self {
             molecular_weight,
@@ -129,8 +128,8 @@ impl AirDragStateEci {
             molecular_temperature,
             mass,
             surfaces,
-            boltzmann_constant, // J/K
-            radius
+            boltzmann_constant: CONSTANTS.boltzmann_constant, // J/K
+            radius: CONSTANTS.radius
         }
     }
 }
@@ -177,7 +176,7 @@ pub struct AirDragStatePairEci {
     mass: f64,
     surfaces: Vec<Surface>,
     boltzmann_constant: f64,
-    radius: f64
+    radius: f64 
 }
 
 impl AirDragStatePairEci {
@@ -187,8 +186,6 @@ impl AirDragStatePairEci {
         molecular_temperature: f64,
         mass: f64,
         surfaces: Vec<Surface>,
-        boltzmann_constant: f64,
-        radius: f64
     ) -> Self {
         Self {
             molecular_weight,
@@ -196,8 +193,8 @@ impl AirDragStatePairEci {
             molecular_temperature,
             mass,
             surfaces,
-            boltzmann_constant, // J/K
-            radius
+            boltzmann_constant: CONSTANTS.boltzmann_constant, // J/K
+            radius: CONSTANTS.radius
         }
     }
 }

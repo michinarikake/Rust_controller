@@ -5,6 +5,7 @@ use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
+use crate::settings::constants::CONSTANTS;
 
 /// **二体問題の連続ダイナミクス**
 #[derive(Debug, Clone)]
@@ -13,9 +14,9 @@ pub struct HcwDynamics {
 }
 
 impl HcwDynamics {
-    pub fn new(mu: f64, a: f64) -> Self {
+    pub fn new(a: f64) -> Self {
         Self { 
-            n: (mu / a.powf(3.0)).powf(0.5)
+            n: (CONSTANTS.mu / a.powf(3.0)).powf(0.5)
          }
     }
 }

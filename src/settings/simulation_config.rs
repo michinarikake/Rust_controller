@@ -96,7 +96,6 @@ pub fn default_simulation_config() -> SimulationConfig {
             // DisturbanceEnum::J2,
         ],
         constants: SimulationConstants {
-            mu: 3.986004 * 10.0e14, // Earth's gravitational parameter (m^3/s^2)
             dt: 1.0,        // Time step (s)
             step: 30000,     // Time step num
             t0: 0.0,
@@ -106,9 +105,6 @@ pub fn default_simulation_config() -> SimulationConfig {
             molecular_temperature: 3.0,
             mass: 50.0,
             surfaces:surface_list,
-            boltzmann_constant: 1.380649e-23,
-            radius: 6378.1e3,
-            j2: 1.08263e-3
         },
     }
 }

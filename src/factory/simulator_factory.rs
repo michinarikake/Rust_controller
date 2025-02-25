@@ -35,7 +35,6 @@ pub struct SimulationConfig{
 
 #[derive(Debug)]
 pub struct SimulationConstants {
-    pub mu: f64, // Earth's gravitational parameter (m^3/s^2)
     pub dt: f64,        // Time step (s)
     pub step: i64,        // Time step (s)
     pub t0: f64,         // Time start (s)
@@ -45,9 +44,6 @@ pub struct SimulationConstants {
     pub molecular_temperature: f64,
     pub mass: f64,
     pub surfaces: Vec<Surface>,
-    pub boltzmann_constant: f64,
-    pub radius: f64,
-    pub j2: f64,
 }
 
 pub struct SimulatorFactory;

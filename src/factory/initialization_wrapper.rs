@@ -16,6 +16,7 @@ use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
 use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci, Surface};
 use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
+use crate::settings::constants::CONSTANTS;
 
 // この実装はここでいいのか...?
 pub trait InitializeState {
@@ -26,7 +27,7 @@ impl InitializeState for PositionVelocityPairStateEci {
     fn initialize(config: &SimulationConfig) -> Self {
         let init_data = &config.init_data;
         let init_type = &config.initialization;
-        let mu = config.constants.mu;
+        let mu = CONSTANTS.mu;
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
                 PositionVelocityPairStateEci::form_from_list(
@@ -56,7 +57,6 @@ impl InitializeState for PositionVelocityStateLvlh {
     fn initialize(config: &SimulationConfig) -> Self {
         let init_data = &config.init_data;
         let init_type = &config.initialization;
-        let mu = config.constants.mu;
         match init_type {
             InitializationTypeEnum::RelativePositionVelocity => {
                 PositionVelocityStateLvlh::form_from_list(
@@ -73,7 +73,7 @@ impl InitializeState for PositionVelocityStateEci {
     fn initialize(config: &SimulationConfig) -> Self {
         let init_data = &config.init_data;
         let init_type = &config.initialization;
-        let mu = config.constants.mu;
+        let mu = CONSTANTS.mu;
         match init_type {
             InitializationTypeEnum::PositionVelocity => {
                 PositionVelocityStateEci::form_from_list(
@@ -101,19 +101,19 @@ pub trait InitializeDynamics {
 
 impl InitializeDynamics for PairTwoBodyDynamics {
     fn initialize(config: &SimulationConfig) -> Self {
-        Self::new(config.constants.mu)
+        Self::new()
     }
 }
 
 impl InitializeDynamics for TwoBodyDynamics {
     fn initialize(config: &SimulationConfig) -> Self {
-        Self::new(config.constants.mu)
+        Self::new()
     }
 }
 
 impl InitializeDynamics for HcwDynamics {
     fn initialize(config: &SimulationConfig) -> Self {
-        Self::new(config.constants.mu, config.constants.a)
+        Self::new(config.constants.a)
     }
 }
 
@@ -140,16 +140,10 @@ impl DisturbanceInitializer<PositionVelocityPairStateEci, Force3dEci> for Positi
                         config.constants.molecular_temperature,
                         config.constants.mass,
                         config.constants.surfaces.clone(),
-                        config.constants.boltzmann_constant,
-                        config.constants.radius,
                     )));
                 }
                 DisturbanceEnum::J2 => {
-                    simulator.add_disturbance(Box::new(J2StatePairEci::new(
-                        config.constants.j2,
-                        config.constants.mu,
-                        config.constants.radius,
-                    )));
+                    simulator.add_disturbance(Box::new(J2StatePairEci::new()));
                 }
             }
         }
@@ -170,16 +164,10 @@ impl DisturbanceInitializer<PositionVelocityStateEci, Force3dEci> for PositionVe
                         config.constants.molecular_temperature,
                         config.constants.mass,
                         config.constants.surfaces.clone(),
-                        config.constants.boltzmann_constant,
-                        config.constants.radius,
                     )));
                 }
                 DisturbanceEnum::J2 => {
-                    simulator.add_disturbance(Box::new(J2StateEci::new(
-                        config.constants.j2,
-                        config.constants.mu,
-                        config.constants.radius,
-                    )));
+                    simulator.add_disturbance(Box::new(J2StateEci::new()));
                 }
             }
         }
