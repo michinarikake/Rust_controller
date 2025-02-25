@@ -4,6 +4,7 @@ use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPair
 use crate::domain::state::orbital_elements::OrbitalElements;
 use crate::domain::force::force_3d_eci::Force3dEci;
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
+use crate::domain::force::force_converter::ForceConverter;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_converter::StateConverter;
@@ -74,7 +75,7 @@ impl J2ForInertiaState<PositionVelocityStateEci> for J2StateEci {
 impl DisturbanceCalculator<PositionVelocityStateEci, Force3dEci> for J2StateEci {
     fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci {
         let force_lvlh = Force3dLvlh::form_from_array(self.calc_force_(state_eci));
-        Force3dEci::form_from_lvlh(&force_lvlh, &self.get_state_eci(state_eci))
+        force_lvlh.convert(&self.get_state_eci(state_eci))
     }
 }
 
@@ -122,6 +123,6 @@ impl J2ForInertiaState<PositionVelocityPairStateEci> for J2StatePairEci {
 impl DisturbanceCalculator<PositionVelocityPairStateEci, Force3dEci> for J2StatePairEci {
     fn calc_force(&self, state_eci: &PositionVelocityPairStateEci) -> Force3dEci {
         let force_lvlh = Force3dLvlh::form_from_array(self.calc_force_(state_eci));
-        Force3dEci::form_from_lvlh(&force_lvlh, &self.get_state_eci(state_eci))
+        force_lvlh.convert(&self.get_state_eci(state_eci))
     }
 }
