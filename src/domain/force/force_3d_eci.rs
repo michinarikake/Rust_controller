@@ -3,7 +3,6 @@ use std::ops::{Add, Sub, Mul, Div};
 
 use super::force_trait::Force;
 use crate::repositry::loggable_trait::Loggable;
-use crate::domain::math::formulations::Math;
 
 #[derive(Debug, Clone)]
 pub struct Force3dEci{

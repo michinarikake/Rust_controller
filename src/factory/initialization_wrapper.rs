@@ -97,12 +97,14 @@ pub trait InitializeDynamics {
     fn initialize(config: &SimulationConfig) -> Self;
 }
 
+#[allow(unused)]
 impl InitializeDynamics for PairTwoBodyDynamics {
     fn initialize(config: &SimulationConfig) -> Self {
         Self::new()
     }
 }
 
+#[allow(unused)]
 impl InitializeDynamics for TwoBodyDynamics {
     fn initialize(config: &SimulationConfig) -> Self {
         Self::new()
@@ -172,6 +174,7 @@ impl DisturbanceInitializer<PositionVelocityStateEci, Force3dEci> for PositionVe
     }
 }
 
+#[allow(unused)]
 impl DisturbanceInitializer<PositionVelocityStateLvlh, Force3dLvlh> for PositionVelocityStateLvlh {
     fn initialize_disturbances(
         config: &SimulationConfig,

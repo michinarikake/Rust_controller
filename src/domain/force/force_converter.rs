@@ -25,13 +25,14 @@ impl ForceConverter<Force3dEci> for Force3dLvlh {
     }
 }
 
-
+#[allow(unused)]
 impl ForceConverter<Force3dLvlh> for Force3dLvlh {
     fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force3dLvlh {
         self.clone()
     }
 }
 
+#[allow(unused)]
 impl ForceConverter<Force3dEci> for Force3dEci {
     fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci {
         self.clone()
