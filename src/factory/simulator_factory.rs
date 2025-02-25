@@ -2,14 +2,14 @@ use std::any::Any;
 use std::ops::{Add, Sub, Div, Mul};
 
 #[allow(unused)]
-use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci, Surface};
+use crate::models::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci, Surface};
 #[allow(unused)]
-use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
-use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
-use crate::domain::dynamics::propagator::Propagator;
+use crate::models::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
+use crate::models::dynamics::dynamics_trait::ContinuousDynamics;
+use crate::models::dynamics::propagator::Propagator;
 use crate::application::simulator::simulator::Simulator;
-use crate::domain::state::state_trait::StateVector;
-use crate::domain::force::force_trait::Force;
+use crate::models::state::state_trait::StateVector;
+use crate::models::force::force_trait::Force;
 use crate::factory::initialization_wrapper::{InitializeState, InitializeDynamics, DisturbanceInitializer};
 
 #[derive(Debug)]

@@ -1,25 +1,25 @@
 #[cfg(test)]
 use crate::application::simulator::simulator::Simulator;
 #[cfg(test)]
-use crate::domain::state::state_trait::StateVector;
+use crate::models::state::state_trait::StateVector;
 #[cfg(test)]
 use crate::repositry::logger::Logger;
 #[cfg(test)]
-use crate::domain::dynamics::propagator::RungeKutta4Propagator;
+use crate::models::dynamics::propagator::RungeKutta4Propagator;
 #[cfg(test)]
-use crate::domain::dynamics::dynamics_2body::TwoBodyDynamics;
+use crate::models::dynamics::dynamics_2body::TwoBodyDynamics;
 #[cfg(test)]
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[cfg(test)]
-use crate::domain::state::orbital_elements::OrbitalElements;
+use crate::models::state::orbital_elements::OrbitalElements;
 #[cfg(test)]
-use crate::domain::force::force_3d_eci::Force3dEci;
+use crate::models::force::force_3d_eci::Force3dEci;
 #[cfg(test)]
 use std::process::Command;
 #[cfg(test)]
 use std::env;
 #[cfg(test)]
-use crate::domain::state::state_converter::StateConverter;
+use crate::models::state::state_converter::StateConverter;
 
 
 #[test]

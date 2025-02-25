@@ -1,7 +1,7 @@
 use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
-use crate::domain::state::state_trait::StateVector;
+use crate::models::state::state_trait::StateVector;
 use crate::repositry::loggable_trait::Loggable;
 // FIXME ここのincludeは本来不要
 // FIXME LOGGERを分離する

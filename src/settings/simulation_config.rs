@@ -1,37 +1,37 @@
 #[allow(unused_imports)]
 use crate::factory::simulator_factory::{SimulationConfig, InitializationTypeEnum, SimulationConstants, DisturbanceEnum};
 #[allow(unused_imports)]
-use crate::domain::dynamics::propagator::RungeKutta4Propagator;
+use crate::models::dynamics::propagator::RungeKutta4Propagator;
 #[allow(unused_imports)]
-use crate::domain::dynamics::propagator::EulerPropagator;
+use crate::models::dynamics::propagator::EulerPropagator;
 #[allow(unused_imports)]
-use crate::domain::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
+use crate::models::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
 #[allow(unused_imports)]
-use crate::domain::dynamics::dynamics_2body::TwoBodyDynamics;
+use crate::models::dynamics::dynamics_2body::TwoBodyDynamics;
 #[allow(unused_imports)]
-use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
+use crate::models::dynamics::dynamics_hcw::HcwDynamics;
 #[allow(unused_imports)]
-use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
+use crate::models::dynamics::dynamics_trait::ContinuousDynamics;
 #[allow(unused_imports)]
-use crate::domain::state::orbital_elements::OrbitalElements;
+use crate::models::state::orbital_elements::OrbitalElements;
 #[allow(unused_imports)]
-use crate::domain::state::position_velocity_covariance_state_lvlh::PositionVelocityCovarianceStateLvlh;
+use crate::models::state::position_velocity_covariance_state_lvlh::PositionVelocityCovarianceStateLvlh;
 #[allow(unused_imports)]
-use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::models::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
 #[allow(unused_imports)]
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[allow(unused_imports)]
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::models::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 #[allow(unused_imports)]
-use crate::domain::force::force_trait::Force;
+use crate::models::force::force_trait::Force;
 #[allow(unused_imports)]
-use crate::domain::force::force_3d_eci::Force3dEci;
+use crate::models::force::force_3d_eci::Force3dEci;
 #[allow(unused_imports)]
-use crate::domain::force::force_6d_eci::Force6dEci;
+use crate::models::force::force_6d_eci::Force6dEci;
 #[allow(unused_imports)]
-use crate::domain::force::force_3d_lvlh::Force3dLvlh;
+use crate::models::force::force_3d_lvlh::Force3dLvlh;
 #[allow(unused_imports)]
-use crate::domain::disturbance::air_drag_disturbance::Surface;
+use crate::models::disturbance::air_drag_disturbance::Surface;
 #[allow(unused_imports)]
 use ndarray::arr1;
 

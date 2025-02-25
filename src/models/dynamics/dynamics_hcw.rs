@@ -1,10 +1,10 @@
 use ndarray::arr2;
 
-use crate::domain::force::force_3d_lvlh::Force3dLvlh;
-use crate::domain::force::force_trait::Force;
-use crate::domain::state::state_trait::StateVector;
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
-use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
+use crate::models::force::force_3d_lvlh::Force3dLvlh;
+use crate::models::force::force_trait::Force;
+use crate::models::state::state_trait::StateVector;
+use crate::models::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::models::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::settings::constants::CONSTANTS;
 
 /// **二体問題の連続ダイナミクス**

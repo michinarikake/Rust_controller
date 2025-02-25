@@ -1,7 +1,7 @@
 use ndarray::concatenate;
 
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use crate::domain::math::formulations::Math;
+use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::models::math::formulations::Math;
 use super::force_trait::Force;
 use super::force_3d_eci::Force3dEci;
 use super::force_3d_lvlh::Force3dLvlh;

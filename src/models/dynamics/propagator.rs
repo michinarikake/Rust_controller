@@ -1,6 +1,6 @@
-use crate::domain::state::state_trait::StateVector;
-use crate::domain::force::force_trait::Force;
-use crate::domain::dynamics::dynamics_trait::{ContinuousDynamics, DiscreteDynamics};
+use crate::models::state::state_trait::StateVector;
+use crate::models::force::force_trait::Force;
+use crate::models::dynamics::dynamics_trait::{ContinuousDynamics, DiscreteDynamics};
 use std::ops::{Add, Sub, Mul, Div};
 
 /// **伝搬トレイト**

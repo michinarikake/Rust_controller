@@ -1,15 +1,15 @@
 use super::disturbance_trait::DisturbanceCalculator;
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
-use crate::domain::state::orbital_elements::OrbitalElements;
-use crate::domain::force::force_3d_eci::Force3dEci;
-use crate::domain::force::force_3d_lvlh::Force3dLvlh;
-use crate::domain::force::force_converter::ForceConverter;
-use crate::domain::state::state_trait::StateVector;
-use crate::domain::force::force_trait::Force;
-use crate::domain::state::state_converter::StateConverter;
+use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::models::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::models::state::orbital_elements::OrbitalElements;
+use crate::models::force::force_3d_eci::Force3dEci;
+use crate::models::force::force_3d_lvlh::Force3dLvlh;
+use crate::models::force::force_converter::ForceConverter;
+use crate::models::state::state_trait::StateVector;
+use crate::models::force::force_trait::Force;
+use crate::models::state::state_converter::StateConverter;
 use crate::settings::constants::CONSTANTS;
-use crate::domain::force::force_6d_eci::Force6dEci;
+use crate::models::force::force_6d_eci::Force6dEci;
 use ndarray::{Array1, arr1};
 
 pub trait J2ForInertiaState<T: StateVector> {

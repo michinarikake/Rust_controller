@@ -1,10 +1,10 @@
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
-use crate::domain::state::position_velocity_covariance_state_lvlh::PositionVelocityCovarianceStateLvlh;
-use crate::domain::state::orbital_elements::OrbitalElements;
-use crate::domain::state::state_trait::StateVector;
-use crate::domain::math::formulations::Math;
+use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::models::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::models::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::models::state::position_velocity_covariance_state_lvlh::PositionVelocityCovarianceStateLvlh;
+use crate::models::state::orbital_elements::OrbitalElements;
+use crate::models::state::state_trait::StateVector;
+use crate::models::math::formulations::Math;
 use ndarray::{arr1, concatenate, s, Axis};
 use std::f64::consts::PI;
 use crate::settings::constants::CONSTANTS;

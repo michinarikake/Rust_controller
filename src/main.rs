@@ -1,4 +1,4 @@
-use satellite_simulator::domain::force::force_trait::Force;
+use satellite_simulator::models::force::force_trait::Force;
 use satellite_simulator::settings::simulation_config::default_simulation_config;
 use satellite_simulator::factory::simulator_factory::SimulatorFactory;
 use satellite_simulator::repositry::logger::Logger;
