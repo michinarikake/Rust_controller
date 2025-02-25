@@ -6,7 +6,7 @@ pub struct Constants {
 }
 
 pub static CONSTANTS: Constants = Constants {
-    mu: 3.986004 * 10.0e14,
+    mu: 3.986004e14,
     boltzmann_constant: 1.380649e-23,
     radius: 6378.1e3,
     j2: 1.08263e-3,

@@ -37,10 +37,14 @@ impl StateConverter<OrbitalElements> for PositionVelocityStateEci {
 
         let i_rad = (h[2] / h_norm).acos();
         let Omega_rad = (n[1]).atan2(n[0]);
-        let mut omega_rad = (n.dot(&p) / (n_norm * p_norm)).acos();
+        
+        let mut cos_omega = n.dot(&p) / (n_norm * p_norm);
+        if cos_omega > 1.0 { cos_omega = 1.0; }
+        let mut omega_rad = cos_omega.acos();
+
         if p[2] < 0.0 { omega_rad = 2.0 * PI - omega_rad; }
 
-        let mut nu_rad = r.dot(&(q / q_norm)).atan2(r.dot(&(p / p_norm)));
+        let mut nu_rad = r.dot(&(q / q_norm)).atan2(r.dot(&(&p / p_norm)));
         if r.dot(&v) < 0.0 { nu_rad = 2.0 * PI - nu_rad; }
 
         let a = 1.0 / (2.0 / r.dot(&r).sqrt() - v.dot(&v) / mu);
