@@ -2,7 +2,6 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use super::state_trait::StateVector;
-use super::position_velocity_state_eci::PositionVelocityStateEci;
 use crate::repositry::loggable_trait::Loggable;
 
 
@@ -16,10 +15,6 @@ impl PositionVelocityStateLvlh {
     pub fn form_from_list(position: [f64; 3], velocity: [f64; 3]) -> Self {
         let state = arr1(&[position[0], position[1], position[2], velocity[0], velocity[1], velocity[2]]);
         Self { state }
-    }
-
-    pub fn form_from_states(state_base: &PositionVelocityStateEci, state_target: &PositionVelocityStateEci) -> Self {
-        Self::form_from_array((state_target - state_base).get_vector().clone())
     }
 
     pub fn position(&self) -> Array1<f64> {
@@ -167,15 +162,4 @@ fn test_position_velocity_state_matrix_multiplication() {
 
     let transformed = transform_matrix * pv_state.clone();
     assert_eq!(transformed.get_vector(), pv_state.get_vector());
-}
-
-#[test]
-fn test_form_from_states() {
-    let base = PositionVelocityStateEci::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.0, 0.0]);
-    let target = PositionVelocityStateEci::form_from_list([7100.0, 100.0, 0.0], [0.1, 8.0, 0.0]);
-
-    let relative = PositionVelocityStateLvlh::form_from_states(&base, &target);
-
-    assert_eq!(relative.position(), arr1(&[100.0, 100.0, 0.0]));
-    assert_eq!(relative.velocity(), arr1(&[0.1, 1.0, 0.0]));
 }

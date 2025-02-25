@@ -1,9 +1,8 @@
-use ndarray::{arr1, concatenate, s, Array1, Array2};
+use ndarray::{arr1, s, Array1, Array2};
 use std::ops::{Add, Sub, Mul, Div};
 
-use super::{orbital_elements::OrbitalElements, state_trait::StateVector};
+use super::state_trait::StateVector;
 use crate::repositry::loggable_trait::Loggable;
-use crate::domain::math::formulations::Math;
 
 // 位置・速度の状態量
 #[derive(Debug, Clone)]
@@ -15,26 +14,6 @@ impl PositionVelocityStateEci {
     pub fn form_from_list(position: [f64; 3], velocity: [f64; 3]) -> Self {
         let state = arr1(&[position[0], position[1], position[2], velocity[0], velocity[1], velocity[2]]);
         Self { state }
-    }
-
-    pub fn form_from_orbital_elements(elements: &OrbitalElements, mu: f64) -> Self {
-        let p = elements.a * (1.0 - elements.e.powi(2));
-        let r = p / (1.0 + elements.e * elements.nu_rad.cos());
-        
-        let r_pqw = arr1(&[r * elements.nu_rad.cos(), r * elements.nu_rad.sin(), 0.0]);
-        let v_pqw = arr1(&[
-            -((mu / p).sqrt()) * elements.nu_rad.sin(),
-            ((mu / p).sqrt()) * (elements.e + elements.nu_rad.cos()),
-            0.0,
-        ]);
-
-        let rotation_matrix = Math::pqw_to_eci_matrix(elements.i_rad, elements.omega_rad, elements.Omega_rad);
-
-        let r_eci = rotation_matrix.dot(&r_pqw).to_vec();
-        let v_eci = rotation_matrix.dot(&v_pqw).to_vec();
-        let state = concatenate![ndarray::Axis(0), r_eci, v_eci];
-
-        PositionVelocityStateEci::form_from_array(state)
     }
 
     pub fn position(&self) -> Array1<f64> {

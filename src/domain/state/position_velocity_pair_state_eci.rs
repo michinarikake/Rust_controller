@@ -2,12 +2,9 @@ use ndarray::{Array1, Array2, arr1, s};
 use std::ops::{Add, Sub, Mul, Div};
 
 use crate::domain::state::state_trait::StateVector;
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::repositry::loggable_trait::Loggable;
-use crate::domain::math::formulations::Math;
-
-use super::orbital_elements::OrbitalElements;
+use super::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use super::state_converter::StateConverter;
 
 #[derive(Debug, Clone)]
 pub struct PositionVelocityPairStateEci {
@@ -25,34 +22,12 @@ impl PositionVelocityPairStateEci {
         Self { state }
     }
 
-    pub fn form_from_state(chief_state: PositionVelocityStateEci, deputy_state: PositionVelocityStateEci) -> Self {
-        let chief = chief_state.get_vector();
-        let deputy = deputy_state.get_vector();
-        let state = arr1(
-            &[chief[0], chief[1], chief[2], chief[3], chief[4], chief[5],
-             deputy[0], deputy[1], deputy[2], deputy[3], deputy[4], deputy[5]]
-            );
-        Self { state }
+    pub fn chief(&self) -> Array1<f64> {
+        self.state.slice(s![0..6]).to_owned()
     }
 
-    pub fn form_from_orbital_elements(chief_oe: OrbitalElements, deputy_oe: OrbitalElements, mu: f64) -> Self {
-        let chief = PositionVelocityStateEci::form_from_orbital_elements(&chief_oe, mu);
-        let deputy = PositionVelocityStateEci::form_from_orbital_elements(&deputy_oe, mu);
-        PositionVelocityPairStateEci::form_from_state(chief, deputy)
-    }
-
-    pub fn chief(&self) -> PositionVelocityStateEci {
-        PositionVelocityStateEci::form_from_array(self.state.slice(s![0..6]).to_owned())
-    }
-
-    pub fn deputy(&self) -> PositionVelocityStateEci {
-        PositionVelocityStateEci::form_from_array(self.state.slice(s![6..12]).to_owned())
-    }
-
-    pub fn relative_position(&self) -> PositionVelocityStateLvlh {
-        PositionVelocityStateLvlh::form_from_array(
-            Math::convert_to_lvlh(self.chief().get_vector(), self.deputy().get_vector())
-        )
+    pub fn deputy(&self) -> Array1<f64> {
+        self.state.slice(s![6..12]).to_owned()
     }
 
 }
@@ -69,7 +44,8 @@ impl StateVector for PositionVelocityPairStateEci {
 
 impl Loggable for PositionVelocityPairStateEci{
     fn output_log(&self) -> String {
-        let state_str : Vec<String> = self.relative_position().get_vector().iter().map(|v| v.to_string()).collect();
+        let state_vec: PositionVelocityStateLvlh = self.convert();
+        let state_str : Vec<String> = state_vec.get_vector().iter().map(|v| v.to_string()).collect();
         state_str.join(",")
     }
 

@@ -14,7 +14,7 @@ use crate::application::simulator::simulator::Simulator;
 use crate::domain::state::state_trait::StateVector;
 // use crate::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
 use crate::domain::force::force_trait::Force;
-use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci, Surface};
+use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci};
 use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
 use crate::settings::constants::CONSTANTS;
 

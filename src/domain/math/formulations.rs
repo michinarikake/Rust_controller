@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2, arr1, arr2, concatenate, Axis, s};
+use ndarray::{Array1, Array2, arr1, arr2};
 use ndarray_linalg::Inverse;
 
 pub struct Math {}
@@ -20,7 +20,7 @@ impl Math {
         v / norm
     }
 
-    /// **ECI (慣性座標系) → Lvlh 座標系の変換行列を計算**
+
     pub fn mat_eci2lvlh(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
         let r_norm = position.dot(position).sqrt();
         let h = Math::cross_product(position, velocity);
@@ -38,39 +38,7 @@ impl Math {
     }
 
     pub fn mat_lvlh2eci(position: &Array1<f64>, velocity: &Array1<f64>) -> Array2<f64> {
-        Math::mat_eci2lvlh(position, velocity).into_owned().inv().expect("Matrix inversion failed")
-    }
-
-    /// **Lvlh座標系へ変換**
-    pub fn convert_to_lvlh(chief_state: &Array1<f64>, deputy_state: &Array1<f64>) -> Array1<f64> {
-        assert!(chief_state.len() == 6 && deputy_state.len() == 6, "State vectors must be of length 6.");
-
-        // **相対位置・速度 (ECI)**
-        let r_rel_eci = deputy_state.slice(s![0..3]).to_owned() - chief_state.slice(s![0..3]).to_owned();
-        let v_rel_eci = deputy_state.slice(s![3..6]).to_owned() - chief_state.slice(s![3..6]).to_owned();
-
-        // **ECI → Lvlh 変換行列**
-        let transform_matrix = Math::mat_eci2lvlh(
-            &chief_state.slice(s![0..3]).to_owned(),
-            &chief_state.slice(s![3..6]).to_owned(),
-        );
-
-        // **角速度 (ω = r × v / |r|²)**
-        let omega = Math::cross_product(
-            &chief_state.slice(s![0..3]).to_owned(),
-            &chief_state.slice(s![3..6]).to_owned(),
-        ) / chief_state.slice(s![0..3]).dot(&chief_state.slice(s![0..3]));
-
-        // **相対速度補正 (ω × r)**
-        let v_rel_corrected = v_rel_eci.to_owned() - Math::cross_product(&omega, &r_rel_eci.to_owned());
-
-        // **Lvlh 変換適用**
-        let r_lvlh = transform_matrix.dot(&r_rel_eci.to_owned());
-        let v_lvlh = transform_matrix.dot(&v_rel_corrected);
-
-        // **変換後の状態を返す**
-        concatenate![Axis(0), r_lvlh, v_lvlh]
-        // concatenate![Axis(0), r_rel_eci, v_rel_eci]
+        Self::mat_eci2lvlh(position, velocity).into_owned().inv().expect("Matrix inversion failed")
     }
 
     #[allow(non_snake_case)]
