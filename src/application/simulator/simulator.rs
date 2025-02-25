@@ -5,7 +5,6 @@ use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
 use crate::domain::disturbance::disturbance_trait::DisturbanceCalculator;
-use ndarray::arr1;
 
 pub struct Simulator<T, U, P, D>
 where
