@@ -15,7 +15,7 @@ use crate::domain::state::orbital_elements::OrbitalElements;
 #[cfg(test)]
 use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[cfg(test)]
-use crate::domain::force::force_3d_eci::Force3dEci;
+use crate::domain::force::force_6d_eci::Force6dEci;
 #[cfg(test)]
 use std::process::Command;
 #[cfg(test)]
@@ -40,7 +40,7 @@ fn pair_state_simulation_test() {
     println!("{}", initial_state1.get_vector());
     println!("{}", initial_state2.get_vector());
     let initial_state: PositionVelocityPairStateEci = vec![initial_state1, initial_state2].convert();
-    let external_force = Force3dEci::form_from_list([0.0, 0.0, 0.0]);
+    let external_force = Force6dEci::form_from_list([0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
     let dynamics = PairTwoBodyDynamics::new();
     let propagator = RungeKutta4Propagator;
     let dt = 0.1;

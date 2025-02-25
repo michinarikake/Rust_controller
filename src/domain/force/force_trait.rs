@@ -3,6 +3,7 @@ use ndarray::Array1;
 pub trait Force: Clone{
     fn get_vector(&self) -> &Array1<f64>;
     fn form_from_array(vec: Array1<f64>) -> Self;
+    fn zeros() -> Self;
 
     /// **加算 (ベクトル + ベクトル)**
     fn add_vec(&self, rhs: &Self) -> Self {

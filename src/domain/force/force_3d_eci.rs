@@ -24,6 +24,10 @@ impl Force for Force3dEci {
     fn form_from_array(vec: Array1<f64>) -> Self {
         Self { force: vec }
     }
+
+    fn zeros() -> Self {
+        Self { force: arr1(&[0.0, 0.0, 0.0]) }
+    }
 }
 
 impl Loggable for Force3dEci {

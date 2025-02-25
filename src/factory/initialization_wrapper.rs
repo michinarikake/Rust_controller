@@ -4,6 +4,7 @@ use crate::domain::dynamics::dynamics_2body::TwoBodyDynamics;
 use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
 use crate::domain::dynamics::propagator::Propagator;
 use crate::domain::force::force_3d_eci::Force3dEci;
+use crate::domain::force::force_6d_eci::Force6dEci;
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 use crate::domain::state::orbital_elements::OrbitalElements;
 use crate::factory::simulator_factory::{SimulationConfig, DisturbanceEnum, InitializationTypeEnum};
@@ -12,7 +13,6 @@ use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 use crate::application::simulator::simulator::Simulator;
 use crate::domain::state::state_trait::StateVector;
-// use crate::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
 use crate::domain::force::force_trait::Force;
 use crate::domain::disturbance::air_drag_disturbance::{AirDragStateEci, AirDragStatePairEci};
 use crate::domain::disturbance::j2_disturbance::{J2StateEci, J2StatePairEci};
@@ -126,20 +126,24 @@ where
 }
 
 
-impl DisturbanceInitializer<PositionVelocityPairStateEci, Force3dEci> for PositionVelocityPairStateEci {
+impl DisturbanceInitializer<PositionVelocityPairStateEci, Force6dEci> for PositionVelocityPairStateEci {
     fn initialize_disturbances(
         config: &SimulationConfig,
-        simulator: &mut Simulator<PositionVelocityPairStateEci, Force3dEci, impl Propagator<PositionVelocityPairStateEci, Force3dEci>, impl ContinuousDynamics<PositionVelocityPairStateEci, Force3dEci>>,
+        simulator: &mut Simulator<PositionVelocityPairStateEci, Force6dEci, impl Propagator<PositionVelocityPairStateEci, Force6dEci>, impl ContinuousDynamics<PositionVelocityPairStateEci, Force6dEci>>,
     ) {
         for disturbance_type in config.disturbances.iter() {
             match disturbance_type {
                 DisturbanceEnum::AirDrag => {
                     simulator.add_disturbance(Box::new(AirDragStatePairEci::new(
-                        config.constants.molecular_weight,
-                        config.constants.wall_temperature,
+                        config.constants.molecular_weight_chief,
+                        config.constants.wall_temperature_chief,
                         config.constants.molecular_temperature,
-                        config.constants.mass,
-                        config.constants.surfaces.clone(),
+                        config.constants.mass_chief,
+                        config.constants.surfaces_chief.clone(),
+                        config.constants.molecular_weight_deputy,
+                        config.constants.wall_temperature_deputy,
+                        config.constants.mass_deputy,
+                        config.constants.surfaces_deputy.clone(),
                     )));
                 }
                 DisturbanceEnum::J2 => {
@@ -159,11 +163,11 @@ impl DisturbanceInitializer<PositionVelocityStateEci, Force3dEci> for PositionVe
             match disturbance_type {
                 DisturbanceEnum::AirDrag => {
                     simulator.add_disturbance(Box::new(AirDragStateEci::new(
-                        config.constants.molecular_weight,
-                        config.constants.wall_temperature,
+                        config.constants.molecular_weight_chief,
+                        config.constants.wall_temperature_chief,
                         config.constants.molecular_temperature,
-                        config.constants.mass,
-                        config.constants.surfaces.clone(),
+                        config.constants.mass_chief,
+                        config.constants.surfaces_chief.clone(),
                     )));
                 }
                 DisturbanceEnum::J2 => {

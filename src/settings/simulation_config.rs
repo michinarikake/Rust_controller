@@ -27,6 +27,8 @@ use crate::domain::force::force_trait::Force;
 #[allow(unused_imports)]
 use crate::domain::force::force_3d_eci::Force3dEci;
 #[allow(unused_imports)]
+use crate::domain::force::force_6d_eci::Force6dEci;
+#[allow(unused_imports)]
 use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 #[allow(unused_imports)]
 use crate::domain::disturbance::air_drag_disturbance::Surface;
@@ -41,7 +43,8 @@ pub type StateType = PositionVelocityPairStateEci;
 // pub type StateType = PositionVelocityStateEci;
 
 // pub type ForceType = Force3dLvlh;
-pub type ForceType = Force3dEci;
+// pub type ForceType = Force3dEci;
+pub type ForceType = Force6dEci;
 
 // pub type PropagatorType = EulerPropagator;
 pub type PropagatorType = RungeKutta4Propagator;
@@ -59,8 +62,9 @@ pub fn default_simulation_config() -> SimulationConfig {
 pub fn default_pair_simulation_config() -> SimulationConfig {
     let specularity = 0.4;
     let a0 = 2.0;
+    let a1 = 0.2;
 
-    let surface_list = vec![
+    let surface_list_chief = vec![
                 Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[1.0, 0.0, 0.0] )},
                 Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 1.0, 0.0] )},
                 Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 0.0, 1.0] )},
@@ -68,11 +72,19 @@ pub fn default_pair_simulation_config() -> SimulationConfig {
                 Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, -1.0, 0.0]) },
                 Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 0.0, -1.0]) },
     ];
+    let surface_list_deputy = vec![
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[1.0, 0.0, 0.0] )},
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[0.0, 1.0, 0.0] )},
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[0.0, 0.0, 1.0] )},
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[-1.0, 0.0, 0.0]) },
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[0.0, -1.0, 0.0]) },
+                Surface { air_specularity: specularity, area_m2: a1, normal_direction: arr1(&[0.0, 0.0, -1.0]) },
+    ];
     SimulationConfig {
         initialization: InitializationTypeEnum::OrbitalElements,
         init_data: vec![
             6928000.0,  // Semi-major axis (m)
-            0.0011,      // Eccentricity
+            0.0001,      // Eccentricity
             1.57079633, // Inclination (rad)
             0.0,        // Argument of perigee (rad)
             0.28869219, // Longitude of ascending node (rad)
@@ -86,18 +98,22 @@ pub fn default_pair_simulation_config() -> SimulationConfig {
         ],
         disturbances: vec![
             DisturbanceEnum::AirDrag,
-            // DisturbanceEnum::J2,
+            DisturbanceEnum::J2,
         ],
         constants: SimulationConstants {
             dt: 1.0,        // Time step (s)
             step: 30000,     // Time step num
             t0: 0.0,
             a: 7000000.0,    // Reference semi-major axis (m)
-            molecular_weight: 18.0,
-            wall_temperature: 30.0,
+            molecular_weight_chief: 18.0,
+            wall_temperature_chief: 30.0,
             molecular_temperature: 3.0,
-            mass: 50.0,
-            surfaces:surface_list,
+            mass_chief: 50.0,
+            surfaces_chief:surface_list_chief,
+            molecular_weight_deputy: 18.0,
+            wall_temperature_deputy: 30.0,
+            mass_deputy: 50.0,
+            surfaces_deputy:surface_list_deputy,
         },
     }
 }
@@ -133,11 +149,15 @@ pub fn default_single_simulation_config() -> SimulationConfig {
             step: 30000,     // Time step num
             t0: 0.0,
             a: 7000000.0,    // Reference semi-major axis (m)
-            molecular_weight: 18.0,
-            wall_temperature: 30.0,
+            molecular_weight_chief: 18.0,
+            wall_temperature_chief: 30.0,
             molecular_temperature: 3.0,
-            mass: 50.0,
-            surfaces:surface_list,
+            mass_chief: 50.0,
+            surfaces_chief:surface_list.clone(),
+            molecular_weight_deputy: 18.0,
+            wall_temperature_deputy: 30.0,
+            mass_deputy: 50.0,
+            surfaces_deputy:surface_list,
         },
     }
 }
@@ -165,7 +185,7 @@ pub fn default_hcw_simulation_config() -> SimulationConfig {
             0.0,
         ],
         disturbances: vec![
-            DisturbanceEnum::AirDrag,
+            // DisturbanceEnum::AirDrag,
             // DisturbanceEnum::J2,
         ],
         constants: SimulationConstants {
@@ -173,11 +193,15 @@ pub fn default_hcw_simulation_config() -> SimulationConfig {
             step: 30000,     // Time step num
             t0: 0.0,
             a: 7000000.0,    // Reference semi-major axis (m)
-            molecular_weight: 18.0,
-            wall_temperature: 30.0,
+            molecular_weight_chief: 18.0,
+            wall_temperature_chief: 30.0,
             molecular_temperature: 3.0,
-            mass: 50.0,
-            surfaces:surface_list,
+            mass_chief: 50.0,
+            surfaces_chief:surface_list.clone(),
+            molecular_weight_deputy: 18.0,
+            wall_temperature_deputy: 30.0,
+            mass_deputy: 50.0,
+            surfaces_deputy:surface_list,
         },
     }
 }

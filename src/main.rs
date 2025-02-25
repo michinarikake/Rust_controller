@@ -1,3 +1,4 @@
+use satellite_simulator::domain::force::force_trait::Force;
 use satellite_simulator::settings::simulation_config::default_simulation_config;
 use satellite_simulator::factory::simulator_factory::SimulatorFactory;
 use satellite_simulator::repositry::logger::Logger;
@@ -10,7 +11,7 @@ fn main() {
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
     let config = default_simulation_config();
-    let external_force = ForceType::form_from_list([0.0, 0.0, 0.0]);
+    let external_force = ForceType::zeros();
 
     let mut simulator_box = SimulatorFactory::create_simulator::<StateType, ForceType, PropagatorType, DynamicsType>(&config);
     let simulator = simulator_box

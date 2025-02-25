@@ -39,11 +39,15 @@ pub struct SimulationConstants {
     pub step: i64,        // Time step (s)
     pub t0: f64,         // Time start (s)
     pub a: f64,    // Reference semi-major axis (m)
-    pub molecular_weight: f64,
-    pub wall_temperature: f64,
+    pub molecular_weight_chief: f64,
+    pub wall_temperature_chief: f64,
     pub molecular_temperature: f64,
-    pub mass: f64,
-    pub surfaces: Vec<Surface>,
+    pub mass_chief: f64,
+    pub surfaces_chief: Vec<Surface>,
+    pub molecular_weight_deputy: f64,
+    pub wall_temperature_deputy: f64,
+    pub mass_deputy: f64,
+    pub surfaces_deputy: Vec<Surface>,
 }
 
 pub struct SimulatorFactory;

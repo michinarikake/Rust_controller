@@ -6,6 +6,7 @@ use crate::domain::{math::formulations::Math, state::position_velocity_state_eci
 use crate::domain::force::force_3d_eci::Force3dEci;
 use crate::domain::force::force_trait::Force;
 use crate::settings::constants::CONSTANTS;
+use crate::domain::force::force_6d_eci::Force6dEci;
 
 use std::f64::consts::PI;
 use ndarray::{Array1, arr1};
@@ -19,12 +20,6 @@ pub struct Surface {
 }
 
 pub trait AirDragForInertiaState<T: StateVector> {
-    fn get_position(&self, state: &T) -> Array1<f64>;
-    fn get_velocity(&self, state: &T) -> Array1<f64>;
-    fn get_radius(&self) -> f64;
-    fn get_air_properties(&self) -> (f64, f64, f64, f64, f64); // (mass, molecular_weight, wall_temp, molecular_temp, boltzmann_const)
-    fn get_surfaces(&self) -> &Vec<Surface>;
-
     fn calc_air_density(&self, altitude: f64) -> f64 {
         let altitude_km = altitude / 1000.0;
         let (scale_height_km, base_height_km, base_rho_kg_m3) = match altitude_km {
@@ -59,20 +54,27 @@ pub trait AirDragForInertiaState<T: StateVector> {
         (-s * s).exp() + PI.sqrt() * s * (1.0 + erfs)
     }
 
-    fn calc_force_(&self, state: &T) -> Array1<f64> {
-        let altitude = self.get_position(state).dot(&self.get_position(state)).sqrt() - self.get_radius();
-        let velocity_norm = self.get_velocity(state).dot(&self.get_velocity(state)).sqrt();
+    fn calc_force_(
+        &self,
+        position: Array1<f64>,
+        velocity: Array1<f64>,
+        mass: f64,
+        molecular_weight: f64,
+        wall_temperature: f64,
+        molecular_temperature: f64,
+        surfaces: &Vec<Surface>,
+    ) -> Array1<f64> {
+        let altitude = position.dot(&position).sqrt() - CONSTANTS.radius;
+        let velocity_norm = velocity.dot(&velocity).sqrt();
         let air_density = self.calc_air_density(altitude);
-        let (mass, molecular_weight, wall_temp, molecular_temp, boltzmann_const) = self.get_air_properties();
-
         let speed = (molecular_weight * velocity_norm * velocity_norm
-            / (2.0 * boltzmann_const * wall_temp))
+            / (2.0 * CONSTANTS.boltzmann_constant * wall_temperature))
             .sqrt();
 
         let mut force = arr1(&[0.0, 0.0, 0.0]);
 
-        for surface in self.get_surfaces() {
-            let cos_theta = surface.normal_direction.dot(&self.get_velocity(state)) / velocity_norm;
+        for surface in surfaces {
+            let cos_theta = surface.normal_direction.dot(&velocity) / velocity_norm;
             if cos_theta > 0.0 {
                 continue;
             }
@@ -84,7 +86,7 @@ pub trait AirDragForInertiaState<T: StateVector> {
 
             let cn = (2.0 - diffuse) / PI.sqrt() * self.calc_function_pi(speed_n) / (speed * speed)
                 + diffuse / 2.0 * self.calc_function_chi(speed_n) / (speed * speed)
-                    * (wall_temp / molecular_temp).sqrt();
+                    * (wall_temperature / molecular_temperature).sqrt();
 
             let ct = diffuse * speed_t * self.calc_function_chi(speed_n) / (PI.sqrt() * speed * speed);
 
@@ -92,7 +94,7 @@ pub trait AirDragForInertiaState<T: StateVector> {
             let normal_coefficient = k * cn;
             let tangential_coefficient = k * ct;
 
-            let tangential_direction = Math::normalize(&Math::cross_product(&self.get_velocity(state), &surface.normal_direction));
+            let tangential_direction = Math::normalize(&Math::cross_product(&velocity, &surface.normal_direction));
 
             force = &force + normal_coefficient * &surface.normal_direction + tangential_coefficient * tangential_direction;
         }
@@ -110,8 +112,6 @@ pub struct AirDragStateEci {
     molecular_temperature: f64,
     mass: f64,
     surfaces: Vec<Surface>,
-    boltzmann_constant: f64,
-    radius: f64
 }
 
 
@@ -129,110 +129,99 @@ impl AirDragStateEci {
             molecular_temperature,
             mass,
             surfaces,
-            boltzmann_constant: CONSTANTS.boltzmann_constant, // J/K
-            radius: CONSTANTS.radius
         }
     }
 }
 
 impl AirDragForInertiaState<PositionVelocityStateEci> for AirDragStateEci {
-    fn get_position(&self, state: &PositionVelocityStateEci) -> Array1<f64> {
-        state.position()
-    }
-
-    fn get_velocity(&self, state: &PositionVelocityStateEci) -> Array1<f64> {
-        state.velocity()
-    }
-
-    fn get_radius(&self) -> f64 {
-        self.radius
-    }
-
-    fn get_air_properties(&self) -> (f64, f64, f64, f64, f64) {
-        (   self.mass, 
-            self.molecular_weight, 
-            self.wall_temperature, 
-            self.molecular_temperature, 
-            self.boltzmann_constant)
-    }
-
-    fn get_surfaces(&self) -> &Vec<Surface> {
-        &self.surfaces
-    }
 }
 
 
 impl DisturbanceCalculator<PositionVelocityStateEci, Force3dEci> for AirDragStateEci {
     fn calc_force(&self, state_eci: &PositionVelocityStateEci) -> Force3dEci {
-        Force3dEci::form_from_array(self.calc_force_(state_eci))
+        Force3dEci::form_from_array(self.calc_force_(
+            state_eci.position(),
+            state_eci.velocity(),
+            self.mass,
+            self.molecular_weight,
+            self.wall_temperature,
+            self.molecular_temperature,
+            &self.surfaces,
+        ))
     }
 }
 
 
 #[derive(Debug)]
 pub struct AirDragStatePairEci {
-    molecular_weight: f64,
-    wall_temperature: f64,
+    molecular_weight_chief: f64,
+    wall_temperature_chief: f64,
     molecular_temperature: f64,
-    mass: f64,
-    surfaces: Vec<Surface>,
-    boltzmann_constant: f64,
-    radius: f64 
+    mass_chief: f64,
+    surfaces_chief: Vec<Surface>,
+    molecular_weight_deputy: f64,
+    wall_temperature_deputy: f64,
+    mass_deputy: f64,
+    surfaces_deputy: Vec<Surface>,
 }
 
 impl AirDragStatePairEci {
     pub fn new(
-        molecular_weight: f64,
-        wall_temperature: f64,
+        molecular_weight_chief: f64,
+        wall_temperature_chief: f64,
         molecular_temperature: f64,
-        mass: f64,
-        surfaces: Vec<Surface>,
+        mass_chief: f64,
+        surfaces_chief: Vec<Surface>,
+        molecular_weight_deputy: f64,
+        wall_temperature_deputy: f64,
+        mass_deputy: f64,
+        surfaces_deputy: Vec<Surface>,
     ) -> Self {
         Self {
-            molecular_weight,
-            wall_temperature,
+            molecular_weight_chief,
+            wall_temperature_chief,
             molecular_temperature,
-            mass,
-            surfaces,
-            boltzmann_constant: CONSTANTS.boltzmann_constant, // J/K
-            radius: CONSTANTS.radius
+            mass_chief,
+            surfaces_chief,
+            molecular_weight_deputy,
+            wall_temperature_deputy,
+            mass_deputy,
+            surfaces_deputy,
         }
     }
 }
 
 impl AirDragForInertiaState<PositionVelocityPairStateEci> for AirDragStatePairEci {
-    fn get_position(&self, state: &PositionVelocityPairStateEci) -> Array1<f64> {
-        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
-        let state_deputy = &state_vec[0];
-        state_deputy.position()
-    }
-
-    fn get_velocity(&self, state: &PositionVelocityPairStateEci) -> Array1<f64> {
-        let state_vec: Vec<PositionVelocityStateEci> = state.convert();
-        let state_deputy = &state_vec[0];
-        state_deputy.velocity()
-    }
-
-    fn get_radius(&self) -> f64 {
-        self.radius
-    }
-
-    fn get_air_properties(&self) -> (f64, f64, f64, f64, f64) {
-        (   self.mass, 
-            self.molecular_weight, 
-            self.wall_temperature, 
-            self.molecular_temperature, 
-            self.boltzmann_constant)
-    }
-
-    fn get_surfaces(&self) -> &Vec<Surface> {
-        &self.surfaces
-    }
 }
 
+impl DisturbanceCalculator<PositionVelocityPairStateEci, Force6dEci> for AirDragStatePairEci {
+    fn calc_force(&self, state_eci: &PositionVelocityPairStateEci) -> Force6dEci {
+        let state_vec: Vec<PositionVelocityStateEci> = state_eci.convert();
+        let state_chief = &state_vec[0];
+        let state_deputy = &state_vec[1];
 
-impl DisturbanceCalculator<PositionVelocityPairStateEci, Force3dEci> for AirDragStatePairEci {
-    fn calc_force(&self, state_eci: &PositionVelocityPairStateEci) -> Force3dEci {
-        Force3dEci::form_from_array(self.calc_force_(state_eci))
+        let force_chief = self.calc_force_(
+            state_chief.position(),
+            state_chief.velocity(),
+            self.mass_chief,
+            self.molecular_weight_chief,
+            self.wall_temperature_chief,
+            self.molecular_temperature,
+            &self.surfaces_chief,
+        );
+        let force_deputy = self.calc_force_(
+            state_deputy.position(),
+            state_deputy.velocity(),
+            self.mass_deputy,
+            self.molecular_weight_deputy,
+            self.wall_temperature_deputy,
+            self.molecular_temperature,
+            &self.surfaces_deputy,
+        );
+
+        Force6dEci::form_from_list([
+            force_chief[0], force_chief[1], force_chief[2],
+            force_deputy[0], force_deputy[1], force_deputy[2],
+        ])
     }
 }

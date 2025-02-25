@@ -57,7 +57,7 @@ where
     fn calc_disturbance(&self) -> U {
         self.disturbances.iter()
             .fold(
-                U::form_from_array(arr1(&[0.0, 0.0, 0.0])), 
+                U::zeros(), 
                 |acc, disturbance| 
                 acc.add_vec(&disturbance.calc_force(&self.state))
             )
