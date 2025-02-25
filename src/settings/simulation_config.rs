@@ -36,34 +36,27 @@ use ndarray::arr1;
 
 // pair,simgle : eci
 // hcw : lvlh
-#[cfg(feature = "pair")]
-pub type StateType = PositionVelocityPairStateEci;
-#[cfg(feature = "hcw")]
+// pub type StateType = PositionVelocityPairStateEci;
 pub type StateType = PositionVelocityStateLvlh;
-#[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-pub type StateType = PositionVelocityStateEci;
+// pub type StateType = PositionVelocityStateEci;
 
-#[cfg(feature = "pair")]
-pub type ForceType = Force3dEci;
-#[cfg(feature = "hcw")]
 pub type ForceType = Force3dLvlh;
-#[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-pub type ForceType = Force3dEci;
+// pub type ForceType = Force3dEci;
 
-#[cfg(feature = "euler")]
-pub type PropagatorType = EulerPropagator;
-#[cfg(not(feature = "euler"))]
+// pub type PropagatorType = EulerPropagator;
 pub type PropagatorType = RungeKutta4Propagator;
 
-#[cfg(feature = "pair")]
-pub type DynamicsType = PairTwoBodyDynamics;
-#[cfg(feature = "hcw")]
+// pub type DynamicsType = PairTwoBodyDynamics;
 pub type DynamicsType = HcwDynamics;
-#[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-pub type DynamicsType = TwoBodyDynamics;
+// pub type DynamicsType = TwoBodyDynamics;
 
-#[cfg(feature = "pair")]
 pub fn default_simulation_config() -> SimulationConfig {
+    //  default_pair_simulation_config()
+    //  default_single_simulation_config()
+     default_hcw_simulation_config()
+}
+
+pub fn default_pair_simulation_config() -> SimulationConfig {
     let specularity = 0.4;
     let a0 = 2.0;
 
@@ -109,8 +102,7 @@ pub fn default_simulation_config() -> SimulationConfig {
     }
 }
 
-#[cfg(all(not(feature = "pair"), not(feature = "hcw")))]
-pub fn default_simulation_config() -> SimulationConfig {
+pub fn default_single_simulation_config() -> SimulationConfig {
     let specularity = 0.4;
     let a0 = 2.0;
 
@@ -137,7 +129,6 @@ pub fn default_simulation_config() -> SimulationConfig {
             // DisturbanceEnum::J2,
         ],
         constants: SimulationConstants {
-            mu: 3.986004 * 10.0e14, // Earth's gravitational parameter (m^3/s^2)
             dt: 1.0,        // Time step (s)
             step: 30000,     // Time step num
             t0: 0.0,
@@ -147,9 +138,46 @@ pub fn default_simulation_config() -> SimulationConfig {
             molecular_temperature: 3.0,
             mass: 50.0,
             surfaces:surface_list,
-            boltzmann_constant: 1.380649e-23,
-            radius: 6378.1e3,
-            j2: 1.08263e-3
+        },
+    }
+}
+
+pub fn default_hcw_simulation_config() -> SimulationConfig {
+    let specularity = 0.4;
+    let a0 = 2.0;
+
+    let surface_list = vec![
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[1.0, 0.0, 0.0] )},
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 1.0, 0.0] )},
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 0.0, 1.0] )},
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[-1.0, 0.0, 0.0]) },
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, -1.0, 0.0]) },
+                Surface { air_specularity: specularity, area_m2: a0, normal_direction: arr1(&[0.0, 0.0, -1.0]) },
+    ];
+    SimulationConfig {
+        initialization: InitializationTypeEnum::RelativePositionVelocity,
+        init_data: vec![
+            10.0,
+            10.0,
+            10.0,
+            0.0,
+            0.0,
+            0.0,
+        ],
+        disturbances: vec![
+            DisturbanceEnum::AirDrag,
+            // DisturbanceEnum::J2,
+        ],
+        constants: SimulationConstants {
+            dt: 1.0,        // Time step (s)
+            step: 30000,     // Time step num
+            t0: 0.0,
+            a: 7000000.0,    // Reference semi-major axis (m)
+            molecular_weight: 18.0,
+            wall_temperature: 30.0,
+            molecular_temperature: 3.0,
+            mass: 50.0,
+            surfaces:surface_list,
         },
     }
 }

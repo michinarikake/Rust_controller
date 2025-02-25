@@ -172,7 +172,7 @@ impl DisturbanceInitializer<PositionVelocityStateEci, Force3dEci> for PositionVe
     }
 }
 
-impl DisturbanceInitializer<PositionVelocityStateLvlh, Force3dLvlh> for PositionVelocityStateEci {
+impl DisturbanceInitializer<PositionVelocityStateLvlh, Force3dLvlh> for PositionVelocityStateLvlh {
     fn initialize_disturbances(
         config: &SimulationConfig,
         simulator: &mut Simulator<PositionVelocityStateLvlh, Force3dLvlh, impl Propagator<PositionVelocityStateLvlh, Force3dLvlh>, impl ContinuousDynamics<PositionVelocityStateLvlh, Force3dLvlh>>,
