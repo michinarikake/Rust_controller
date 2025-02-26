@@ -1,27 +1,27 @@
 #[cfg(test)]
 use crate::application::simulator::simulator::Simulator;
 #[cfg(test)]
-use crate::models::state::state_trait::StateVector;
+use crate::domain::state::state_trait::StateVector;
 #[cfg(test)]
-use crate::repositry::logger::Logger;
+use crate::infrastructure::logger::logger::Logger;
 #[cfg(test)]
-use crate::models::dynamics::propagator::RungeKutta4Propagator;
+use crate::domain::dynamics::propagator::RungeKutta4Propagator;
 #[cfg(test)]
-use crate::models::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
+use crate::domain::dynamics::dynamics_2sat_2body::PairTwoBodyDynamics;
 #[cfg(test)]
-use crate::models::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
+use crate::domain::state::position_velocity_pair_state_eci::PositionVelocityPairStateEci;
 #[cfg(test)]
-use crate::models::state::orbital_elements::OrbitalElements;
+use crate::domain::state::orbital_elements::OrbitalElements;
 #[cfg(test)]
-use crate::models::state::position_velocity_state_eci::PositionVelocityStateEci;
+use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[cfg(test)]
-use crate::models::force::force_6d_eci::Force6dEci;
+use crate::domain::force::force_6d_eci::Force6dEci;
 #[cfg(test)]
 use std::process::Command;
 #[cfg(test)]
 use std::env;
 #[cfg(test)]
-use crate::models::state::state_converter::StateConverter;
+use crate::domain::state::state_converter::StateConverter;
 
 
 

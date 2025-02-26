@@ -1,13 +1,13 @@
 #[cfg(test)]
-use crate::settings::simulation_config::default_simulation_config;
+use crate::infrastructure::settings::simulation_config::default_simulation_config;
 #[cfg(test)]
-use crate::factory::simulator_factory::SimulatorFactory;
+use crate::infrastructure::factory::simulator_factory::SimulatorFactory;
 #[cfg(test)]
-use crate::repositry::logger::Logger;
+use crate::infrastructure::logger::logger::Logger;
 #[cfg(test)]
 use crate::application::simulator::simulator::Simulator;
 #[cfg(test)]
-use crate::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
+use crate::infrastructure::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
 
 #[test]
 fn pair_state_simulation_test() {

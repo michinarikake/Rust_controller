@@ -1,9 +1,9 @@
-use satellite_simulator::models::force::force_trait::Force;
-use satellite_simulator::settings::simulation_config::default_simulation_config;
-use satellite_simulator::factory::simulator_factory::SimulatorFactory;
-use satellite_simulator::repositry::logger::Logger;
+use satellite_simulator::domain::force::force_trait::Force;
+use satellite_simulator::infrastructure::settings::simulation_config::default_simulation_config;
+use satellite_simulator::infrastructure::factory::simulator_factory::SimulatorFactory;
+use satellite_simulator::infrastructure::logger::logger::Logger;
 use satellite_simulator::application::simulator::simulator::Simulator;
-use satellite_simulator::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
+use satellite_simulator::infrastructure::settings::simulation_config::{StateType, ForceType, PropagatorType, DynamicsType};
 
 fn main() {
     let log_filename = "test_pair_state_simulation_log.csv";

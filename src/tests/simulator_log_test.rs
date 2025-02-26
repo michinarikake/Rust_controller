@@ -1,15 +1,15 @@
 #[cfg(test)]
 use crate::application::simulator::simulator::Simulator;
 #[cfg(test)]
-use crate::repositry::logger::Logger;
+use crate::infrastructure::logger::logger::Logger;
 #[cfg(test)]
-use crate::models::dynamics::propagator::RungeKutta4Propagator;
+use crate::domain::dynamics::propagator::RungeKutta4Propagator;
 #[cfg(test)]
-use crate::models::dynamics::dynamics_hcw::HcwDynamics;
+use crate::domain::dynamics::dynamics_hcw::HcwDynamics;
 #[cfg(test)]
-use crate::models::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
+use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
 #[cfg(test)]
-use crate::models::force::force_3d_lvlh::Force3dLvlh;
+use crate::domain::force::force_3d_lvlh::Force3dLvlh;
 #[cfg(test)]
 use std::process::Command;
 #[cfg(test)]

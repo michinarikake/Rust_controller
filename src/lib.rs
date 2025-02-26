@@ -1,6 +1,4 @@
-pub mod models;
+pub mod domain;
 pub mod application;
-pub mod repositry;
+pub mod infrastructure;
 pub mod tests;
-pub mod factory;
-pub mod settings;
