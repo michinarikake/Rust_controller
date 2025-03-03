@@ -120,6 +120,14 @@ impl Mul<PositionVelocityStateLvlh> for Array2<f64> {
     }
 }
 
+impl Mul<&PositionVelocityStateLvlh> for Array2<f64> {
+    type Output = PositionVelocityStateLvlh;
+    fn mul(self, rhs: &PositionVelocityStateLvlh) -> PositionVelocityStateLvlh {
+        let result = self.dot(rhs.get_vector());
+        PositionVelocityStateLvlh::form_from_array(result)
+    }
+}
+
 #[cfg(test)]
 use ndarray::arr2;
 /// **`PositionVelocityStateLvlh` の基本演算テスト**
