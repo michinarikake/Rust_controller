@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2};
+use ndarray::{arr1, Array1, Array2, concatenate};
 use std::collections::HashMap;
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
@@ -225,7 +225,8 @@ impl AdjointVariableUpdater {
         // 終端コストの勾配が終端時刻の随伴変数
         let mode_last = mode_schedule.get(t_index_last).unwrap();
         let cost_last = mode_dynamics_map.get_cost(*mode_last).unwrap();
-        let p_last = T::form_from_array(cost_last.differentiate(&states.get(t_index_last).unwrap(), &U::zeros(),t_index_last as f64 * dt + 1.0));
+        let nabla_m = cost_last.differentiate(&states.get(t_index_last).unwrap(), &U::zeros(),t_index_last as f64 * dt + 1.0);
+        let p_last = T::form_from_array(concatenate![ndarray::Axis(0), arr1(&[1.0]), nabla_m]);
         p_map.insert(t_index_last, p_last.clone());
 
         for t_index in (0..t_index_last).rev() {
