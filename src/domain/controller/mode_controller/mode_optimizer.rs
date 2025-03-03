@@ -44,7 +44,20 @@ pub trait CostAndDifferentiable<T, U>: Cost<T, U> + Differentiable1d<T, U>
 where
     T: StateVector,
     U: Force,
-{}
+{
+    fn as_cost(&self) -> &dyn Cost<T, U>;
+}
+
+impl<T, U, C> CostAndDifferentiable<T, U> for C
+where
+    T: StateVector,
+    U: Force,
+    C: Cost<T, U> + Differentiable1d<T, U>,
+{
+    fn as_cost(&self) -> &dyn Cost<T, U> {
+        self
+    }
+}
 
 
 /// **モードとダイナミクスの対応関係を表現する構造体**
@@ -53,8 +66,8 @@ where
     T: StateVector,
     U: Force,
 {
-    dynamics_mapping: HashMap<ModeId, Box<dyn ContinuousDynamicsAndDifferentiable<T, U>>>, // モード -> ダイナミクス
-    cost_mapping: HashMap<ModeId, Box<dyn CostAndDifferentiable<T, U>>>, // モード -> 評価関数
+    pub dynamics_mapping: HashMap<ModeId, Box<dyn ContinuousDynamicsAndDifferentiable<T, U>>>, // モード -> ダイナミクス
+    pub cost_mapping: HashMap<ModeId, Box<dyn CostAndDifferentiable<T, U>>>, // モード -> 評価関数
 }
 
 impl<T, U> ModeDynamicsMap<T, U>
