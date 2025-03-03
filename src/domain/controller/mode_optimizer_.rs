@@ -1,95 +1,155 @@
-use std::marker::PhantomData;
+use ndarray::{Array1, Array2};
 use std::collections::HashMap;
+use crate::domain::force::force_trait::Force;
+use crate::domain::state::state_trait::StateVector;
+use crate::domain::cost::cost_trait::Cost;
+use crate::domain::dynamics::propagator::Propagator;
+use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
+use crate::domain::differentiable::differentiable_trait::Differentiable;
 
-
-pub struct ModeTransition<T: StateVector> {
-    pub transitions: HashMap<usize, usize>, // モード遷移マップ
-    pub state_jumps: HashMap<(usize, usize), T>, // 状態のジャンプ
-}
-
-pub struct ModeOptimizer<T, U, D, C>
+/// **モードとダイナミクスの対応関係を表現する構造体**
+pub struct ModeDynamicsMap<T, U, D>
 where
     T: StateVector,
     U: Force,
-    D: Dynamics<T, U> + Differentiable<T, U>,
-    C: Cost<T, U> + Differentiable<T, U>,
+    D: ContinuousDynamics<T, U>,
 {
-    dynamics: Vec<D>,
-    cost: C,
-    transitions: ModeTransition<T>,
-    current_mode: usize,
-    dt: f64,
-    range_search: f64,
-    x_nominal_list: Vec<T>,
-    v_nominal_list: Vec<U>,
-    rho_list: Vec<T>,
-    v_mode_list: Vec<U>, // modeの数だけvを持つ
-    _marker: PhantomData<(T, U)>,
+    mapping: HashMap<usize, D>, // モード -> ダイナミクス
 }
 
-impl<T, U, D, C> ModeOptimizer<T, U, D, C>
+impl<T, U, D> ModeDynamicsMap<T, U, D>
 where
     T: StateVector,
     U: Force,
-    D: Dynamics<T, U> + Differentiable<T, U>,
-    C: Cost<T, U> + Differentiable<T, U>,
+    D: ContinuousDynamics<T, U>,
 {
-    pub fn compute_measure(&self, S: &Vec<f64>, t_step: f64, epsilon: f64) -> f64 {
-        S.len() as f64 * t_step
+    pub fn new(mapping: HashMap<usize, D>) -> Self {
+        Self { mapping }
     }
 
-    // すべてのモード（v_new）を探索して最小値を求める
-    pub fn compute_D_sigma_for_all_mode(&self) -> (Vec<Vec<f64>>, f64, Vec<U>) {
-        let mut D_sigma_s_list = Vec::new();
-        let mut D_sigma_list = Vec::new();
-        let mut v_opt_list = Vec::new();
+    pub fn get_dynamics(&self, mode: usize) -> Option<&D> {
+        self.mapping.get(&mode)
+    }
+}
 
-        for v_new in &self.v_mode_list {
-            let (D_sigma_s, D_sigma) = self.compute_D_sigma(v_new);
-            D_sigma_s_list.push(D_sigma_s);
-            D_sigma_list.push(D_sigma);
+/// **モードスケジュールを表現する構造体**
+pub struct ModeSchedule {
+    schedule: HashMap<usize, usize>, // 時刻 -> モード
+}
+
+impl ModeSchedule {
+    pub fn new(schedule: HashMap<usize, usize>) -> Self {
+        Self { schedule }
+    }
+
+    pub fn get(&self, time: usize) -> Option<&usize> {
+        self.schedule.get(&time)
+    }
+
+    pub fn update(&mut self, time: usize, mode: usize) {
+        self.schedule.insert(time, mode);
+    }
+}
+
+/// **状態量の更新（各時刻のモードに対応するダイナミクスから微分値を求める）**
+pub fn update_states<T, U, D, P>(
+    schedule: &ModeSchedule,
+    mode_dynamics_map: &ModeDynamicsMap<T, U, D>,
+    propagator: &P,
+    dt: f64,
+) -> Vec<T>
+where
+    T: StateVector,
+    U: Force,
+    D: ContinuousDynamics<T, U>,
+    P: Propagator<T, U>,
+{
+    let mut states = vec![];
+    for t in 0..schedule.schedule.len() {
+        if let Some(&mode) = schedule.get(t) {
+            if let Some(dynamics) = mode_dynamics_map.get_dynamics(mode) {
+                let prev_state = if t == 0 {
+                    T::form_from_array(Array1::zeros(3)) // 初期状態（仮）
+                } else {
+                    states[t - 1].clone()
+                };
+                let new_state = propagator.propagate_continuous(&prev_state, &U::form_from_array(Array1::zeros(prev_state.get_vector().len())), dynamics, dt);
+                states.push(new_state);
+            }
         }
-        let D_sigma = *D_sigma_list.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+    }
+    states
+}
 
-        // 各時刻・各モードをすべて探索して、最小値を求める
-        for i in 0..self.x_nominal_list.len() {
-            let mut min_val = f64::MAX;
-            let mut best_v = U::zeros();
-            for (j, v_new) in self.v_mode_list.iter().enumerate() {
-                if D_sigma_s_list[j][i] < min_val {
-                    min_val = D_sigma_s_list[j][i];
-                    best_v = v_new.clone();
+/// **Armijo 条件を適用してモードスケジュールを更新**
+pub struct ArmijoOptimizer {
+    pub eta: f64,
+    pub alpha: f64,
+    pub beta: f64,
+    pub lambda: f64,
+}
+
+impl ArmijoOptimizer {
+    pub fn apply<T, U, D, P>(
+        &mut self,
+        D: &Array2<f64>,
+        evaluator: &dyn Cost<T, U>,
+        schedule: &ModeSchedule,
+        mode_dynamics_map: &ModeDynamicsMap<T, U, D>,
+        propagator: &P,
+        dt: f64,
+    ) -> ModeSchedule
+    where
+        T: StateVector,
+        U: Force,
+        D: ContinuousDynamics<T, U>,
+        P: Propagator<T, U>,
+    {
+        let D_min = D.iter().cloned().fold(f64::INFINITY, f64::min);
+        let mut lambda = self.lambda;
+        
+        loop {
+            let threshold = self.eta * D_min;
+            let mut selected_times = Vec::new();
+            let mut selected_modes = Vec::new();
+            
+            for (t, row) in D.axis_iter(ndarray::Axis(0)).enumerate() {
+                if let Some((min_index, &min_value)) = row.iter().enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()) {
+                    if min_value <= threshold {
+                        selected_times.push(t);
+                        selected_modes.push(min_index);
+                    }
                 }
             }
-            v_opt_list.push(best_v);
-        }
 
-        (D_sigma_s_list, D_sigma, v_opt_list)
-    }
+            let mut subset_times = Vec::new();
+            let mut subset_modes = Vec::new();
+            let mut measure = 0.0;
 
-    // 特定のモード（v_new）に対して、時刻に関する最小値を求める
-    pub fn compute_D_sigma(&self, v_new: &U) -> (Vec<f64>, f64) {
-        let mut D_sigma_s = Vec::new();
-        let mut D_sigma = f64::MAX;
+            for (&t, &m) in selected_times.iter().zip(selected_modes.iter()) {
+                measure += 1.0;
+                if measure > lambda {
+                    break;
+                }
+                subset_times.push(t);
+                subset_modes.push(m);
+            }
 
-        for i in 0..self.x_nominal_list.len() {
-            let x = &self.x_nominal_list[i];
-            let v = &self.v_nominal_list[i];
-            let p = &self.rho_list[i]; // Replace with proper rho storage
-            let D_s = self.insertion_gradient(i as f64 * self.dt, p, x, v, v_new);
-            D_sigma_s.push(D_s);
-            if D_s < D_sigma {
-                D_sigma = D_s;
+            let mut new_schedule = schedule.clone();
+            for (&t, &m) in subset_times.iter().zip(subset_modes.iter()) {
+                new_schedule.update(t, m);
+            }
+            
+            let states = update_states(&new_schedule, mode_dynamics_map, propagator, dt);
+            
+            let new_value = evaluator.evaluate(&new_schedule, &states);
+            let old_value = evaluator.evaluate(schedule, &states);
+            
+            if new_value - old_value <= self.alpha * lambda * D_min {
+                return new_schedule;
+            } else {
+                lambda *= self.beta;
             }
         }
-        (D_sigma_s, D_sigma) // D_sigma_sは特定のモードに対する勾配の時系列
-    }
-
-    fn insertion_gradient(&self, t: f64, p: &T, x: &T, v_current: &U, v_new: &U) -> f64 {
-        let new_x = self.dynamics[self.current_mode].dynamics_x(self.dt, t, x, v_new);
-        let prev_x = self.dynamics[self.current_mode].dynamics_x(self.dt, t, x, v_current);
-        let diff = new_x.sub_vec(&prev_x);
-        let p_vec = p.get_vector();
-        diff.get_vector().iter().zip(p_vec.iter()).map(|(d, p)| d * p).sum()
     }
 }
