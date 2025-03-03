@@ -119,6 +119,14 @@ impl Mul<PositionVelocityStateEci> for Array2<f64> {
     }
 }
 
+impl Mul<&PositionVelocityStateEci> for Array2<f64> {
+    type Output = PositionVelocityStateEci;
+    fn mul(self, rhs: &PositionVelocityStateEci) -> PositionVelocityStateEci {
+        let result = self.dot(rhs.get_vector());
+        PositionVelocityStateEci::form_from_array(result)
+    }
+}
+
 #[cfg(test)]
 use ndarray::arr2;
 /// **`PositionVelocityStateEci` の基本演算テスト**
