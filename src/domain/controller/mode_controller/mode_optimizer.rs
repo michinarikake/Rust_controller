@@ -1,11 +1,13 @@
 use ndarray::{arr1, Array1, Array2, concatenate};
 use std::collections::HashMap;
+use crate::domain::controller::controller_trait::Controller;
 use crate::domain::force::force_trait::Force;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::cost::cost_trait::Cost;
 use crate::domain::dynamics::propagator::Propagator;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::differentiable::differentiable_trait::{Differentiable2d, Differentiable1d};
+use super::wrapper::{InputDefinedDynamics, ModeState};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct ModeId{
@@ -18,7 +20,7 @@ impl ModeId {
     }
 }
 
-pub trait ContinuousDynamicsAndDifferentiable<T, U>: ContinuousDynamics<T, U> + Differentiable2d<T, U>
+pub trait ContinuousDynamicsAndDifferentiable<T, U>: ContinuousDynamics<T, U> + Differentiable2d<T, U> + InputDefinedDynamics<T, U>
 where
     T: StateVector,
     U: Force,
@@ -30,7 +32,7 @@ impl<T, U, D> ContinuousDynamicsAndDifferentiable<T, U> for D
 where
     T: StateVector,
     U: Force,
-    D: ContinuousDynamics<T, U> + Differentiable2d<T, U>,
+    D: ContinuousDynamics<T, U> + Differentiable2d<T, U> + InputDefinedDynamics<T, U>,
 {
     fn as_continuous_dynamics(&self) -> &dyn ContinuousDynamics<T, U> {
         self
@@ -317,6 +319,7 @@ where
     mode_dynamics_map: ModeDynamicsMap<T, U>,
     propagator: P,
     dt: f64,
+    mode_schedule: Option<ModeSchedule>,
 }
 
 impl<T, U, P> ModeScheduler<T, U, P> 
@@ -339,8 +342,10 @@ where
         dt: f64,
     ) -> Self {
         let mode_dynamics_map = ModeDynamicsMap::new(dynamics_mapping, cost_mapping);
-        Self { eta, alpha, beta, lambda , max_iterations, t_index0, t_index_last, x0: x0.clone(), 
-            mode_dynamics_map, propagator, dt }
+        let mut instance = Self { eta, alpha, beta, lambda , max_iterations, t_index0, t_index_last, x0: x0.clone(), 
+            mode_dynamics_map, propagator, dt, mode_schedule: None};
+        instance.optimize();
+        instance
     }
 
     pub fn optimize(&mut self) -> ModeSchedule
@@ -450,5 +455,26 @@ where
             }
         }
         cost_value
+    }
+}
+
+
+impl<T, U, P> Controller<ModeState<T>, U> for ModeScheduler<ModeState<T>, U, P>
+where
+    T: StateVector,
+    U: Force,
+    P: Propagator<ModeState<T>, U>,
+{
+    #[allow(unused_variables)]
+    fn compute_control_input(&self, state: &ModeState<T>, t: f64) -> U {
+        let mode_schedule = self.mode_schedule.as_ref().expect("ModeScheduler must be optimized before computing control input");
+        let t_index = (t / self.dt).floor() as usize;
+        let mode = mode_schedule.get(t_index).expect("No mode found for given time");
+
+        self.mode_dynamics_map
+            .get_dynamics(*mode)
+            .map(|dynamics| dynamics.get_input(state, t))  // `get_input()` を正しく利用
+            .unwrap()
+            .clone()
     }
 }

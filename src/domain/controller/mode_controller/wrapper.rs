@@ -53,6 +53,9 @@ impl<T: StateVector> StateVector for ModeState<T> {
     }
 }
 
+pub trait InputDefinedDynamics<T: StateVector, U: Force> {
+    fn get_input(&self, state: &T, t: f64) -> U;
+}
 
 /// **ModeScheduler 用の拡張ダイナミクス**
 pub struct ModeDynamics<T, U, C, D>
