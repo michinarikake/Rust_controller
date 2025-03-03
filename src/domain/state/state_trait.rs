@@ -1,4 +1,4 @@
-use ndarray::Array1;
+use ndarray::{Array1, Array2};
 
 /// **共通の状態ベクトルトレイト**
 pub trait StateVector: Clone {
@@ -23,6 +23,10 @@ pub trait StateVector: Clone {
     /// **スカラー除算 (ベクトル / スカラー)**
     fn div_scalar(&self, scalar: f64) -> Self {
         Self::form_from_array(self.get_vector() / scalar)
+    }
+
+    fn mul_mat(&self, mat: &Array2<f64>) -> Self {
+        Self::form_from_array(self.get_vector().dot(mat))
     }
 
     // ここに演算子オーバーロードを実装したい...
