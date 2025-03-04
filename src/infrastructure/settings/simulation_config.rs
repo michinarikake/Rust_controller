@@ -84,7 +84,7 @@ pub fn default_pair_simulation_config() -> SimulationConfig {
         initialization: InitializationTypeEnum::OrbitalElements,
         init_data: vec![
             6928000.0,  // Semi-major axis (m)
-            0.0001,      // Eccentricity
+            0.0000,      // Eccentricity
             1.57079633, // Inclination (rad)
             0.0,        // Argument of perigee (rad)
             0.28869219, // Longitude of ascending node (rad)
@@ -94,15 +94,15 @@ pub fn default_pair_simulation_config() -> SimulationConfig {
             1.57079633, // Inclination (rad)
             0.0,        // Argument of perigee (rad)
             0.28869219, // Longitude of ascending node (rad)
-            0.0         // True anomaly (rad)
+            0.000003  // True anomaly (rad)
         ],
         disturbances: vec![
             DisturbanceEnum::AirDrag,
-            DisturbanceEnum::J2,
+            // DisturbanceEnum::J2,
         ],
         constants: SimulationConstants {
-            dt: 1.0,        // Time step (s)
-            step: 30000,     // Time step num
+            dt: 0.1,        // Time step (s)
+            step: 1000,     // Time step num
             t0: 0.0,
             a: 7000000.0,    // Reference semi-major axis (m)
             molecular_weight_chief: 18.0,

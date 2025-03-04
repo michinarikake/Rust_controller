@@ -1,4 +1,5 @@
 use ndarray::{arr1, Array1, Array2, concatenate};
+use core::f64;
 use std::collections::HashMap;
 use crate::domain::controller::controller_trait::Controller;
 use crate::domain::force::force_trait::Force;
@@ -7,7 +8,7 @@ use crate::domain::cost::cost_trait::Cost;
 use crate::domain::dynamics::propagator::Propagator;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::differentiable::differentiable_trait::{Differentiable2d, Differentiable1d};
-use super::wrapper::{InputDefinedDynamics, ModeState};
+use super::wrapper::InputDefinedDynamics;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub struct ModeId{
@@ -241,7 +242,7 @@ impl AdjointVariableUpdater {
         let mode_last = mode_schedule.get(t_index_last).unwrap();
         let cost_last = mode_dynamics_map.get_cost(*mode_last).unwrap();
         let nabla_m = cost_last.differentiate(&states.get(t_index_last).unwrap(), &U::zeros(),t_index_last as f64 * dt + 1.0);
-        let p_last = T::form_from_array(concatenate![ndarray::Axis(0), arr1(&[1.0]), nabla_m]);
+        let p_last = T::form_from_array(nabla_m);
         p_map.insert(t_index_last, p_last.clone());
 
         for t_index in (0..t_index_last).rev() {
@@ -267,8 +268,12 @@ impl AdjointVariableUpdater {
     {
         let mode =  schedule.get(t_index).unwrap();
         let dynamics = mode_dynamics_map.get_dynamics(*mode).unwrap();
-        let grad = dynamics.differentiate(x_prev, &U::zeros(), t_index as f64 * dt);
-        p.mul_mat(&grad)
+        let cost = mode_dynamics_map.get_cost(*mode).unwrap();
+        let grad_dynamics = dynamics.differentiate(x_prev, &U::zeros(), t_index as f64 * dt);
+        let grad_cost = cost.differentiate(x_prev, &U::zeros(), t_index as f64 * dt);
+        p.mul_mat(&grad_dynamics)
+            .add_vec(&T::form_from_array(grad_cost))
+            .mul_scalar(-1.0)
     }
 }
 
@@ -283,13 +288,14 @@ impl InsertionGradientCalculator {
         mode_dynamics_map: &ModeDynamicsMap<T, U>,
         t_index0: usize,
         t_index_last: usize,
-     ) -> Array2<f64>
+    ) -> (Array2<f64>, Vec<ModeId>) // 最適モードを追加
     where
         T: StateVector,
         U: Force,
     {
         let num_modes = mode_dynamics_map.dynamics_mapping.len();
         let mut d = Array2::zeros((t_index_last, num_modes));
+        let mut optimal_modes = vec![ModeId::new(0); t_index_last]; // 各時刻の最適モード
 
         for t_index in t_index0..t_index_last {
             let mode_prev = mode_schedule.get(t_index).unwrap();
@@ -297,22 +303,36 @@ impl InsertionGradientCalculator {
             let x_now = state_schedule.get(t_index).unwrap();
             let p_now = adjoint_schedule.get(t_index).unwrap();
 
+            let mut min_value = f64::INFINITY;
+            let mut min_index = 0;
 
             for m_index in 0..num_modes {
                 let mode_new = ModeId::new(m_index);
                 let dynamics_new = mode_dynamics_map.get_dynamics(mode_new).unwrap();
                 let x_dot_prev = dynamics_prev.compute_derivative(x_now, &U::zeros());
                 let x_dot_new = dynamics_new.compute_derivative(x_now, &U::zeros());
-                d[(t_index, m_index)] = Self::compute_insertion_gradient::<T>(&p_now, &x_dot_prev, &x_dot_new)
+                let grad_value = Self::compute_insertion_gradient::<T>(&p_now, &x_dot_prev, &x_dot_new);
+
+                d[(t_index, m_index)] = grad_value;
+
+                // **最小の D_sigma を持つモードを更新**
+                if grad_value < min_value {
+                    min_value = grad_value;
+                    min_index = m_index;
+                }
             }
+            // **この時刻で最小のモードを記録**
+            optimal_modes[t_index] = ModeId::new(min_index);
         }
-        d
+
+        (d, optimal_modes)
     }
 
     pub fn compute_insertion_gradient<T: StateVector>(p: &T, x_dot_prev: &T, x_dot_new: &T) -> f64 {
         p.get_vector().dot(&(x_dot_new.get_vector() - x_dot_prev.get_vector()))
     }
 }
+
 
 /// **Armijo 条件を適用してモードスケジュールを更新**
 pub struct ModeScheduler<T, U, P>
@@ -324,15 +344,14 @@ where
     pub eta: f64,
     pub alpha: f64,
     pub beta: f64,
-    pub lambda: f64,
     pub max_iterations: usize,
     pub t_index0: usize,
     pub t_index_last: usize,
-    x0: T,
-    mode_dynamics_map: ModeDynamicsMap<T, U>,
-    propagator: P,
-    dt: f64,
-    mode_schedule: Option<ModeSchedule>,
+    pub x0: T,
+    pub mode_dynamics_map: ModeDynamicsMap<T, U>,
+    pub propagator: P,
+    pub dt: f64,
+    pub mode_schedule: Option<ModeSchedule>,
 }
 
 impl<T, U, P> ModeScheduler<T, U, P> 
@@ -344,7 +363,6 @@ where
     pub fn new(eta: f64, 
         alpha: f64, 
         beta: f64, 
-        lambda: f64, 
         max_iterations: usize, 
         t_index0: usize, 
         t_index_last: usize, 
@@ -355,9 +373,9 @@ where
         dt: f64,
     ) -> Self {
         let mode_dynamics_map = ModeDynamicsMap::new(dynamics_mapping, cost_mapping);
-        let mut instance = Self { eta, alpha, beta, lambda , max_iterations, t_index0, t_index_last, x0: x0.clone(), 
+        let mut instance = Self { eta, alpha, beta, max_iterations, t_index0, t_index_last, x0: x0.clone(), 
             mode_dynamics_map, propagator, dt, mode_schedule: None};
-        instance.optimize();
+        instance.mode_schedule = Some(instance.optimize());
         instance
     }
 
@@ -369,16 +387,17 @@ where
         let mut old_value = self.evaluate_cost(&mode_schedule, &state_schedule, &self.mode_dynamics_map);
 
         for _ in 0..self.max_iterations {
-            let d = InsertionGradientCalculator::compute(&mode_schedule, &state_schedule, &adjoint_schedule, &self.mode_dynamics_map, self.t_index0, self.t_index_last);
-            let new_schedule = self.apply_armijo(&d, &mode_schedule, &state_schedule, &self.mode_dynamics_map, &self.x0, &self.propagator, &self.dt);
-            let new_value = self.evaluate_cost(&new_schedule, &state_schedule, &self.mode_dynamics_map);
+            let (d, optimal_modes) = InsertionGradientCalculator::compute(&mode_schedule, &state_schedule, &adjoint_schedule, &self.mode_dynamics_map, self.t_index0, self.t_index_last);
+            mode_schedule = self.apply_armijo(&d, &optimal_modes, &mode_schedule, &state_schedule, &self.mode_dynamics_map, &self.x0, &self.propagator, &self.dt);
 
-            if new_value - old_value <= 0.01 {
-                return new_schedule;
-            }
-            mode_schedule = new_schedule;
             state_schedule = StateUpdater::new(&self.x0, &mode_schedule, &self.mode_dynamics_map, &self.propagator, self.dt);
             adjoint_schedule = AdjointVariableUpdater::new(&state_schedule, &mode_schedule, &self.mode_dynamics_map, self.dt);
+
+            let new_value = self.evaluate_cost(&mode_schedule, &state_schedule, &self.mode_dynamics_map);
+
+            if -new_value + old_value <= 0.01 {
+                break;
+            }
             old_value = new_value;
         }
         mode_schedule
@@ -387,6 +406,7 @@ where
     pub fn apply_armijo(
         &self,
         d: &Array2<f64>,
+        optimal_modes: &Vec<ModeId>, // 追加
         mode_schedule: &ModeSchedule,
         state_schedule0: &StateSchedule<T>,
         mode_dynamics_map: &ModeDynamicsMap<T, U>,
@@ -396,21 +416,37 @@ where
     ) -> ModeSchedule
     {
         let d_min = d.iter().cloned().fold(f64::INFINITY, f64::min);
-        let mut lambda = self.lambda;
         let old_value = self.evaluate_cost(mode_schedule, &state_schedule0, mode_dynamics_map);
         
+        // `get_small_grad_subset` は不要になった
+        let mut selected_times = vec![];
+        let mut selected_modes = vec![];
+        let mut lambda = 0.0;
+    
+        for t in 0..d.shape()[0] {
+            let min_value = d.row(t).iter().cloned().fold(f64::INFINITY, f64::min);
+            if min_value <= self.eta * d_min {
+                selected_times.push(t);
+                selected_modes.push(optimal_modes[t]);
+                lambda += dt;
+            }
+        }
+        
         loop {
-            let (subset_times, subset_modes) = self.get_subset(d, lambda * d_min, self.dt);
-
+            let (subset_times, subset_modes) = self.get_subset(selected_times.clone(), selected_modes.clone(), lambda, self.dt);
+    
+            if subset_times.is_empty() {
+                return mode_schedule.clone();
+            }
+    
             let mut new_schedule = mode_schedule.clone();
             for (&t, &m) in subset_times.iter().zip(subset_modes.iter()) {
                 new_schedule.insert(t, m);
             }
-            
+    
             let state_schedule_new = StateUpdater::new(x0, &new_schedule, mode_dynamics_map, propagator, dt.clone());
-
             let cost_value_new = self.evaluate_cost(&new_schedule, &state_schedule_new, mode_dynamics_map);
-
+    
             if cost_value_new - old_value <= self.alpha * lambda * d_min {
                 return ModeSchedule::new(0, self.t_index_last, &new_schedule.schedule);
             } else {
@@ -418,31 +454,20 @@ where
             }
         }
     }
+    
 
-    fn get_subset(&self, d: &Array2<f64>, threshold: f64, dt: f64) -> (Vec<usize>, Vec<ModeId>) {
-        let mut selected_times = Vec::new();
-        let mut selected_modes = Vec::new();
-        
-        for (t, row) in d.axis_iter(ndarray::Axis(0)).enumerate() {
-            if let Some((min_index, &min_value)) = row.iter().enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()) {
-                if min_value <= threshold {
-                    selected_times.push(t);
-                    selected_modes.push(min_index);
-                }
-            }
-        }
-
+    fn get_subset(&self, selected_times: Vec<usize>, selected_modes: Vec<ModeId>, lambda: f64, dt: f64) -> (Vec<usize>, Vec<ModeId>) {
         let mut subset_times = Vec::new();
         let mut subset_modes = Vec::new();
         let mut measure = 0.0;
 
         for (&t, &m) in selected_times.iter().zip(selected_modes.iter()) {
             measure += dt;
-            if measure > self.lambda {
+            if measure > lambda {
                 break;
             }
             subset_times.push(t);
-            subset_modes.push(ModeId::new(m));
+            subset_modes.push(m);
         }
         (subset_times, subset_modes)
     }
@@ -456,12 +481,12 @@ where
     {
         let mut cost_value = 0.0;
 
-        for t_index in self.t_index0..self.t_index_last + 1 {
+        for t_index in self.t_index0..self.t_index_last {
             let x = state_schedule.get(t_index).unwrap();
             let mode = schedule.get(t_index).unwrap();
             let cost = mode_dynamics_map.get_cost(*mode).unwrap();
 
-            if t_index == self.t_index_last {
+            if t_index == self.t_index_last - 1 {
                 cost_value += cost.terminal_cost(x);
             } else {
                 cost_value += cost.stage_cost(x, &U::zeros());
@@ -472,14 +497,14 @@ where
 }
 
 
-impl<T, U, P> Controller<ModeState<T>, U> for ModeScheduler<ModeState<T>, U, P>
+impl<T, U, P> Controller<T, U> for ModeScheduler<T, U, P>
 where
     T: StateVector,
     U: Force,
-    P: Propagator<ModeState<T>, U>,
+    P: Propagator<T, U>,
 {
     #[allow(unused_variables)]
-    fn compute_control_input(&self, state: &ModeState<T>, t: f64) -> U {
+    fn compute_control_input(&self, state: &T, t: f64) -> U {
         let mode_schedule = self.mode_schedule.as_ref().expect("ModeScheduler must be optimized before computing control input");
         let t_index = (t / self.dt).floor() as usize;
         let mode = mode_schedule.get(t_index).expect("No mode found for given time");
