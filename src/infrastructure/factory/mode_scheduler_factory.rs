@@ -10,7 +10,7 @@ use crate::domain::controller::mode_controller::mode_optimizer::{ModeId, ModeDyn
 use crate::domain::cost::quadric_cost::QuadraticCost;
 use crate::infrastructure::factory::initialization_wrapper::InitializeState;
 use crate::domain::state::state_converter::StateConverter;
-use crate::infrastructure::settings::simulation_config;
+// use crate::infrastructure::settings::simulation_config;
 
 use ndarray::{arr1, Array2};
 
@@ -28,7 +28,10 @@ pub struct ModeSchedulerConfig {
     pub alpha: f64,
     pub beta: f64,
     pub max_iterations: usize,
-    pub u_max: f64
+    pub u_max: f64,
+    pub q_matrix: Array2<f64>,
+    pub r_matrix: Array2<f64>,
+    pub qf_matrix: Array2<f64>,
 }
 
 pub struct ControllerFactory<T, T2, U, P, D> {
@@ -49,9 +52,9 @@ where
         let mut dynamics_mapping = HashMap::new();
         let mut cost_mapping = HashMap::new();
 
-        let q_matrix = Array2::<f64>::eye(6) * 0.00000000001;
-        let r_matrix = Array2::<f64>::zeros((3, 3));
-        let qf_matrix = Array2::<f64>::eye(6);
+        let q_matrix = config.q_matrix.clone();
+        let r_matrix = config.r_matrix.clone();
+        let qf_matrix = config.qf_matrix.clone();
         
         // 制御入力の組み合わせ (-1,0,1) の 27 通り
         let u_max = config.u_max;

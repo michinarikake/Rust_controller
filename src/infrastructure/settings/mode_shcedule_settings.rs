@@ -61,6 +61,9 @@ pub fn default_mode_scheduler_config() -> ModeSchedulerConfig {
         beta: 0.5,
         max_iterations: 100,
         u_max: 0.01,
+        q_matrix: Array2::<f64>::eye(6) * 0.00000000001,
+        r_matrix: Array2::<f64>::zeros((3, 3)),
+        qf_matrix: Array2::<f64>::eye(6),
     }
 }
 
