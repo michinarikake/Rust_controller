@@ -48,7 +48,7 @@ impl ForceConverter<Force6dLvlh> for Vec<Force3dLvlh> {
 impl ForceConverter<Force6dEci> for Vec<Force3dLvlh> {
     fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force6dEci {
         let chief_eci: Force3dEci = self[0].convert(state_eci);
-        let deputy_eci: Force3dEci = self[0].convert(state_eci);
+        let deputy_eci: Force3dEci = self[1].convert(state_eci);
         vec![chief_eci, deputy_eci].convert(state_eci)
     }
 }
@@ -56,7 +56,7 @@ impl ForceConverter<Force6dEci> for Vec<Force3dLvlh> {
 impl ForceConverter<Force6dLvlh> for Vec<Force3dEci> {
     fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force6dLvlh {
         let chief_eci: Force3dLvlh = self[0].convert(state_eci);
-        let deputy_eci: Force3dLvlh = self[0].convert(state_eci);
+        let deputy_eci: Force3dLvlh = self[1].convert(state_eci);
         vec![chief_eci, deputy_eci].convert(state_eci)
     }
 }
@@ -67,6 +67,20 @@ impl ForceConverter<Vec<Force3dLvlh>> for Force6dLvlh {
         let chief = Force3dLvlh::form_from_array(self.chief());
         let deputy = Force3dLvlh::form_from_array(self.deputy());
         vec![chief, deputy]
+    }
+}
+
+#[allow(unused)]
+impl ForceConverter<Force6dEci> for Force3dEci {
+    fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force6dEci {
+        vec![Force3dEci::zeros(), self.clone()].convert(state_eci)
+    }
+}
+
+#[allow(unused)]
+impl ForceConverter<Force6dEci> for Force3dLvlh {
+    fn convert(&self, state_eci: &PositionVelocityStateEci) -> Force6dEci {
+        vec![Force3dLvlh::zeros(), self.clone()].convert(state_eci)
     }
 }
 
