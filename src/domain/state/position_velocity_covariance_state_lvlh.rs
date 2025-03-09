@@ -8,11 +8,11 @@ use crate::infrastructure::logger::loggable_trait::Loggable;
 // 位置・速度・共分散の状態量
 #[derive(Debug, Clone)]
 pub struct PositionVelocityCovarianceStateLvlh {
-    state: Array1<f64>, // [l, mu_x(6), est_x(6), p(21)]
+    state: Array1<f64>, // [mu_x(6), est_x(6), p(21)]
 }
 
 impl PositionVelocityCovarianceStateLvlh {
-    pub fn form_from_list(l: f64, mu_x: [f64; 6], est_x: [f64; 6], p: Array2<f64>) -> Self {
+    pub fn form_from_list(mu_x: [f64; 6], est_x: [f64; 6], p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
         let mut p_upper = Vec::with_capacity(21);
@@ -22,7 +22,7 @@ impl PositionVelocityCovarianceStateLvlh {
             }
         }
 
-        let mut state_vec = vec![l];
+        let mut state_vec = vec![];
         state_vec.extend(&mu_x);
         state_vec.extend(&est_x);
         state_vec.extend(p_upper);
@@ -32,7 +32,7 @@ impl PositionVelocityCovarianceStateLvlh {
         }
     }
 
-    pub fn from_from_states(l: f64, mu_x: &PositionVelocityStateLvlh, est_x: &PositionVelocityStateLvlh, p: Array2<f64>) -> Self {
+    pub fn from_from_states(mu_x: &PositionVelocityStateLvlh, est_x: &PositionVelocityStateLvlh, p: Array2<f64>) -> Self {
         assert!(p.shape() == [6, 6], "p must be a 6x6 matrix");
 
         let mut p_upper = Vec::with_capacity(21);
@@ -42,7 +42,7 @@ impl PositionVelocityCovarianceStateLvlh {
             }
         }
 
-        let mut state_vec = vec![l];
+        let mut state_vec = vec![];
         state_vec.extend(mu_x.get_vector().iter());
         state_vec.extend(est_x.get_vector().iter());
         state_vec.extend(p_upper);
@@ -52,25 +52,21 @@ impl PositionVelocityCovarianceStateLvlh {
         }
     }
 
-    pub fn get_l(&self) -> f64 {
-        self.state[0]
-    }
-
     pub fn get_mu_x(&self) -> PositionVelocityStateLvlh {
-        let position: [f64; 3] = self.state.slice(s![1..4]).to_owned().to_vec().try_into().unwrap();
-        let velocity: [f64; 3] = self.state.slice(s![4..7]).to_owned().to_vec().try_into().unwrap();
+        let position: [f64; 3] = self.state.slice(s![0..3]).to_owned().to_vec().try_into().unwrap();
+        let velocity: [f64; 3] = self.state.slice(s![3..6]).to_owned().to_vec().try_into().unwrap();
         PositionVelocityStateLvlh::form_from_list(position, velocity)
     }
 
     pub fn get_est_x(&self) -> PositionVelocityStateLvlh {
-        let position: [f64; 3] = self.state.slice(s![7..10]).to_owned().to_vec().try_into().unwrap();
-        let velocity: [f64; 3] = self.state.slice(s![10..13]).to_owned().to_vec().try_into().unwrap();
+        let position: [f64; 3] = self.state.slice(s![6..9]).to_owned().to_vec().try_into().unwrap();
+        let velocity: [f64; 3] = self.state.slice(s![9..12]).to_owned().to_vec().try_into().unwrap();
         PositionVelocityStateLvlh::form_from_list(position, velocity)
     }
 
     pub fn get_covariance_matrix(&self) -> Array2<f64> {
         let mut p_full = Array2::<f64>::zeros((6, 6));
-        let p_data = &self.state.as_slice().unwrap()[13..];
+        let p_data = &self.state.as_slice().unwrap()[12..];
 
         let mut index = 0;
         for i in 0..6 {
@@ -102,17 +98,16 @@ impl Loggable for PositionVelocityCovarianceStateLvlh{
         let est_headers: Vec<String> = (0..6).map(|i| format!("est_x_{}", i)).collect();
         let p_headers: Vec<String> = (0..21).map(|i| format!("p_{}", i)).collect();
 
-        format!("l,{}, {}, {}", mu_headers.join(","), est_headers.join(","), p_headers.join(","))
+        format!("{}, {}, {}", mu_headers.join(","), est_headers.join(","), p_headers.join(","))
     }
 
     /// **ログの出力**
     fn output_log(&self) -> String {
-        let l = self.get_l();
         let mu_x = self.get_mu_x().get_vector().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
         let est_x = self.get_est_x().get_vector().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
         let covariance = self.get_covariance_matrix().iter().map(|v| v.to_string()).collect::<Vec<_>>().join(",");
 
-        format!("{},{},{},{}", l, mu_x, est_x, covariance)
+        format!("{},{},{}", mu_x, est_x, covariance)
     }
 }
 
@@ -199,9 +194,8 @@ fn test_position_velocity_covariance_state() {
     let mu_x = PositionVelocityStateLvlh::form_from_list([7000.0, 0.0, 0.0], [0.0, 7.5, 0.0]);
     let est_x = PositionVelocityStateLvlh::form_from_list([6999.0, 0.0, 0.1], [0.0, 7.49, 0.1]);
 
-    let pvc_state = PositionVelocityCovarianceStateLvlh::from_from_states(1.0, &mu_x, &est_x, p_full.clone());
+    let pvc_state = PositionVelocityCovarianceStateLvlh::from_from_states( &mu_x, &est_x, p_full.clone());
 
-    assert_eq!(pvc_state.get_l(), 1.0);
     assert_eq!(pvc_state.get_mu_x().get_vector(), mu_x.get_vector());
     assert_eq!(pvc_state.get_est_x().get_vector(), est_x.get_vector());
     assert_eq!(pvc_state.get_covariance_matrix(), p_full);

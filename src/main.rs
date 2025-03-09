@@ -15,12 +15,15 @@ use satellite_simulator::infrastructure::settings::simulation_config::{StateType
 
 fn main() {
     let log_filename = "simulation_log.csv";
+    let log_filename2 = "controller_log.csv";
+    let date_str = chrono::Local::now().format("%Y-%m-%d-%H-%M").to_string();
     
     // ロガーの作成
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
+    let mut logger2 = Logger::new(log_filename2).expect("Failed to initialize logger");
 
     let config = default_simulation_config();
-    let controller_config = default_mode_scheduler_config();
+    let controller_config = default_mode_scheduler_config(&config);
 
     let mut simulator_box = SimulatorFactory::create_simulator::<StateType, ForceType, PropagatorType, DynamicsType>(&config);
     let simulator = simulator_box
@@ -39,16 +42,19 @@ fn main() {
 
         // 同じタイムステップのデータを一行にまとめる
         logger.add_entry(simulator.get_state().clone());
-        // logger.add_entry(force_6d_eci.clone());
-        logger.add_entry(external_force.clone());
+        logger.add_entry(force_6d_eci.clone());
+        logger2.add_entry(external_force.clone());
+        logger2.add_entry(mode_scheduler.get_optimized_state_schedule(simulator.t).clone());
 
         logger.log(simulator.t);
+        logger2.log(simulator.t);
     }
 
     logger.flush();
+    logger2.flush();
 
-    let date_str = chrono::Local::now().format("%Y-%m-%d-%H-%M").to_string();
     let log_filename = format!("data/{}/{}_simulation_log.csv", date_str, date_str);
+    let log_filename2 = format!("data/{}/{}_controller_log.csv", date_str, date_str);
     
      // **プロジェクトのルートパスを取得**
      let current_dir = env::current_dir().expect("Failed to get current directory");
@@ -56,11 +62,16 @@ fn main() {
  
      // **スクリプトの存在を確認**
      if script_path.exists() {
-         let output = Command::new("python") // または "python"（環境による）
+         let output = Command::new("python")
              .arg(script_path.to_str().unwrap())
              .arg(&log_filename)  
              .output()
              .expect("Failed to execute plot_common.py");
+        Command::new("python")
+            .arg(script_path.to_str().unwrap())
+            .arg(&log_filename2)  
+            .output()
+            .expect("Failed to execute plot_common.py");
  
          if output.status.success() {
              println!("Python script executed successfully.");

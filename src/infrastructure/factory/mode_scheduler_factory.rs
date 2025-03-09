@@ -10,29 +10,11 @@ use crate::domain::controller::mode_controller::mode_optimizer::{ModeId, ModeDyn
 use crate::domain::cost::quadric_cost::QuadraticCost;
 use crate::infrastructure::factory::initialization_wrapper::InitializeState;
 use crate::domain::state::state_converter::StateConverter;
+use crate::infrastructure::settings::mode_shcedule_settings::{CreateInputDefinedDynamics, ModeSchedulerConfig};
+
 // use crate::infrastructure::settings::simulation_config;
 
-use ndarray::{arr1, Array2};
-
-
-/// **制御入力が固定されたダイナミクス**
-pub trait CreateInputDefinedDynamics<U: Force>
-{
-    fn new(control_input: U, config: &ModeSchedulerConfig, simulation_config: &SimulationConfig) -> Self;
-}
-
-
-/// **設定値**
-pub struct ModeSchedulerConfig {
-    pub eta: f64,
-    pub alpha: f64,
-    pub beta: f64,
-    pub max_iterations: usize,
-    pub u_max: f64,
-    pub q_matrix: Array2<f64>,
-    pub r_matrix: Array2<f64>,
-    pub qf_matrix: Array2<f64>,
-}
+use ndarray::arr1;
 
 pub struct ControllerFactory<T, T2, U, P, D> {
     _phantom: std::marker::PhantomData<(T, T2, U, P, D)>,
@@ -41,7 +23,7 @@ pub struct ControllerFactory<T, T2, U, P, D> {
 
 impl<T, T2, U, P, D> ControllerFactory<T, T2, U, P, D>
 where 
-    T: StateVector + InitializeState + Clone + 'static,
+    T: StateVector + Clone + 'static,
     T2: StateVector + Clone + 'static + StateConverter<T>,
     U: Force + Clone + 'static,
     P: Propagator<T, U> + 'static,

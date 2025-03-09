@@ -42,7 +42,7 @@ fn test_mode_scheduler_optimization() {
     let mut logger = Logger::new(log_filename).expect("Failed to initialize logger");
 
     let config = default_simulation_config();
-    let controller_config = default_mode_scheduler_config();
+    let controller_config = default_mode_scheduler_config(&config);
 
     let mut simulator_box = SimulatorFactory::create_simulator::<StateType, ForceType, PropagatorType, DynamicsType>(&config);
     let simulator = simulator_box
@@ -56,7 +56,7 @@ fn test_mode_scheduler_optimization() {
         let x: ControllerStateType = simulator.get_state().clone().convert();
         let external_force = mode_scheduler.compute_control_input(&x, simulator.t);
         let state_eci_vec: Vec<PositionVelocityStateEci> = simulator.get_state().clone().convert();
-        let force_6d_eci = &external_force.convert(&state_eci_vec[0].clone());
+        let force_6d_eci = &external_force.convert(&state_eci_vec[0].clone()); //FIXME: ここが状態量依存
         simulator.update(&force_6d_eci);
 
         // 同じタイムステップのデータを一行にまとめる

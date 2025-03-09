@@ -352,6 +352,7 @@ where
     pub propagator: P,
     pub dt: f64,
     pub mode_schedule: Option<ModeSchedule>,
+    pub optimized_state_schedule: Option<StateSchedule<T>>,
 }
 
 impl<T, U, P> ModeScheduler<T, U, P> 
@@ -374,7 +375,7 @@ where
     ) -> Self {
         let mode_dynamics_map = ModeDynamicsMap::new(dynamics_mapping, cost_mapping);
         let mut instance = Self { eta, alpha, beta, max_iterations, t_index0, t_index_last, x0: x0.clone(), 
-            mode_dynamics_map, propagator, dt, mode_schedule: None};
+            mode_dynamics_map, propagator, dt, mode_schedule: None, optimized_state_schedule: None };
         instance.mode_schedule = Some(instance.optimize());
         instance
     }
@@ -386,7 +387,8 @@ where
         let mut adjoint_schedule = AdjointVariableUpdater::new(&state_schedule, &mode_schedule, &self.mode_dynamics_map, self.dt);
         let mut old_value = self.evaluate_cost(&mode_schedule, &state_schedule, &self.mode_dynamics_map);
 
-        for _ in 0..self.max_iterations {
+        for i in 0..self.max_iterations {
+            println!("start Iteration{}:, old_value:{}", i, old_value);
             let (d, optimal_modes) = InsertionGradientCalculator::compute(&mode_schedule, &state_schedule, &adjoint_schedule, &self.mode_dynamics_map, self.t_index0, self.t_index_last);
             mode_schedule = self.apply_armijo(&d, &optimal_modes, &mode_schedule, &state_schedule, &self.mode_dynamics_map, &self.x0, &self.propagator, &self.dt);
 
@@ -400,6 +402,7 @@ where
             }
             old_value = new_value;
         }
+        self.optimized_state_schedule = Some(state_schedule);
         mode_schedule
     }
 
@@ -493,6 +496,11 @@ where
             }
         }
         cost_value
+    }
+
+    pub fn get_optimized_state_schedule(&self, t: f64) -> &T {
+        let state_schedule = self.optimized_state_schedule.as_ref().expect("ModeScheduler must be optimized before getting optimized state schedule");
+        state_schedule.get((t / self.dt).floor() as usize).expect("No state found for given time")
     }
 }
 
