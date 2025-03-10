@@ -5,10 +5,9 @@ use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
 use crate::domain::differentiable::differentiable_trait::Differentiable2d;
 use crate::domain::controller::mode_controller::wrapper::InputDefinedDynamics;
 use crate::infrastructure::factory::simulator_factory::SimulationConfig;
-use crate::infrastructure::settings::simulation_config::default_pair_simulation_config;
+// use crate::infrastructure::settings::simulation_config::default_pair_simulation_config;
 use ndarray::{Array2, arr2};
 use ndarray_linalg::Inverse;
-use serde::de;
 use crate::infrastructure::settings::constants::CONSTANTS;
 #[allow(unused_imports)]
 use crate::domain::dynamics::propagator::RungeKutta4Propagator;
@@ -139,6 +138,8 @@ pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> Mo
     }
 }
 
+
+//Fixme: 実装場所を変える
 impl StateConverter<PositionVelocityCovarianceStateLvlh> for PositionVelocityPairStateEci {
     fn convert(&self) -> PositionVelocityCovarianceStateLvlh {
         let pos_vec_lvlh: PositionVelocityStateLvlh = self.convert();
@@ -374,6 +375,10 @@ impl InputDefinedDynamics<PositionVelocityCovarianceStateLvlh, Force3dLvlh> for 
     fn get_input(&self, _: &PositionVelocityCovarianceStateLvlh, _: f64) -> Force3dLvlh {
         self.control_input.clone()
     }
+
+    fn set_noise(&mut self, noise_matrix: &Array2<f64>) {
+        self.d_mat = noise_matrix.clone();
+    }
 }
 
 
@@ -409,6 +414,9 @@ impl InputDefinedDynamics<PositionVelocityStateLvlh, Force3dLvlh> for LinearCont
 {
     fn get_input(&self, _: &PositionVelocityStateLvlh, _: f64) -> Force3dLvlh {
         self.control_input.clone()
+    }
+
+    fn set_noise(&mut self, _: &Array2<f64>) {
     }
 }
 
