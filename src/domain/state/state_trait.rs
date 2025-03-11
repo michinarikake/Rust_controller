@@ -26,7 +26,7 @@ pub trait StateVector: Clone {
     }
 
     fn mul_mat(&self, mat: &Array2<f64>) -> Self {
-        Self::form_from_array(self.get_vector().dot(mat))
+        Self::form_from_array(mat.dot(self.get_vector()))
     }
 
     // ここに演算子オーバーロードを実装したい...

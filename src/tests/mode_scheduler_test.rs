@@ -1,10 +1,7 @@
-use crate::domain::force::force_6d_eci;
-use crate::domain::force::force_converter::ForceConverter;
-use crate::domain::force::force_trait::Force;
-use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[cfg(test)]
-use crate::domain::state::relative_position_velocity_state_lvlh::PositionVelocityStateLvlh;
-use crate::domain::state::state_trait::StateVector;
+use crate::domain::force::force_converter::ForceConverter;
+#[cfg(test)]
+use crate::domain::state::position_velocity_state_eci::PositionVelocityStateEci;
 #[cfg(test)]
 use crate::infrastructure::settings::simulation_config::default_simulation_config;
 #[cfg(test)]

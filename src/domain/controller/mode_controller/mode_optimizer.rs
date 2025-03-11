@@ -1,4 +1,4 @@
-use ndarray::{Array1, Array2};
+use ndarray::{Array1, Array2, Axis};
 use core::f64;
 use std::collections::HashMap;
 use crate::domain::controller::controller_trait::Controller;
@@ -348,11 +348,16 @@ impl StateUpdater {
                 states[&(t_index - 1)].clone()
             };
 
+            // println!("prev_state = {:?}", prev_state.get_vector());
+
             let passive_mode_prev = if t_index == 0 {
                 passive_mode0.clone()
             }else{
                 passive_mode_schedule.get(t_index - 1).unwrap().clone()
             };
+
+            let noise_prev = &passive_mode_map.noise_matrix[&passive_mode_prev].clone();
+            dynamics.set_noise(noise_prev);
 
             // 遷移を確認
             let passive_mode_new = passive_mode_map.check_transition(passive_mode_prev, &prev_state);
@@ -390,10 +395,29 @@ impl StateUpdater {
     }
 
     fn calc_pi(f1: &Array1<f64>, f2: &Array1<f64>,  nabla_reset: &Array2<f64>, nabla_guard: &Array1<f64>) -> Array2<f64> {
-
         let eye = Array2::eye(f1.len());
+        let f1_matrix = f1.clone().insert_axis(Axis(1));
+        let f2_matrix = f2.clone().insert_axis(Axis(1));
+        let nabla_guard_matrix = nabla_guard.clone().insert_axis(Axis(1));
         // pi = nabla_reset @ (eye - f1 @ nabla_guard.T / (nabla_guard.T @ f1)) + f2 @ nabla_guard.T / (nabla_guard.T @ f1)
-        nabla_reset.dot(&(eye - f1.dot(&nabla_guard.t()) / nabla_guard.t().dot(f1))) + f2.dot(&nabla_guard.t()) / nabla_guard.t().dot(f1)
+        let pi = 
+            nabla_reset.dot(&(eye - f1_matrix.dot(&nabla_guard_matrix.t()) / nabla_guard_matrix.t().dot(f1))) 
+            + f2_matrix.dot(&nabla_guard_matrix.t()) / nabla_guard_matrix.t().dot(f1);
+        // piの1e-5以上の要素を表示する
+        // for i in 0..pi.shape()[0] {
+        //     for j in 0..pi.shape()[1] {
+        //         if pi[[i, j]].abs() > 1e-10 {
+        //             println!("pi[{}, {}] = {}", i, j, pi[[i, j]]);
+        //         }
+        //     }
+        // }
+        // println!("{}", nabla_guard_matrix.t());
+        // // (&f1_matrix - &f2_matrix).dot(&nabla_guard_matrix.t())の7列目を表示
+        // for i in 0..f1_matrix.shape()[0] {
+        //     println!("f1 - f2 = {}", (&f1_matrix - &f2_matrix).dot(&nabla_guard_matrix.t())[[i, 7]]);
+            
+        // }
+        pi
     }
     
 }
@@ -432,10 +456,20 @@ impl AdjointVariableUpdater {
             {
                 if passive_mode_schedule.compare_mode(t_index, t_index - 1){
                     let pi = pi_schedule.get(t_index).unwrap();
+                    // for i in 0..pi.shape()[0] {
+                    //     for j in 0..pi.shape()[1] {
+                    //         if pi[[i, j]].abs() > 1e-10 {
+                    //             println!("pi[{}, {}] = {}", i, j, pi[[i, j]]);
+                    //         }
+                    //     }
+                    // }
+                    // println!("p = {:?}", p.get_vector());
                     p = p.mul_mat(&pi.t().to_owned());
+                    // println!("p = {:?}", p.get_vector());
                 }
             }
-            let p_dot = Self::compute_derivative::<T, U>(&p, 
+            let p_dot = Self::compute_derivative::<T, U>(
+                                                            &p, 
                                                             &states.get(t_index).unwrap(), 
                                                             t_index, 
                                                             mode_schedule, 
@@ -464,7 +498,7 @@ impl AdjointVariableUpdater {
         let cost = mode_dynamics_map.get_cost(*mode).unwrap();
         let grad_dynamics = dynamics.differentiate(x_prev, &U::zeros(), t_index as f64 * dt);
         let grad_cost = cost.differentiate(x_prev, &U::zeros(), t_index as f64 * dt);
-        p.mul_mat(&grad_dynamics)
+        p.mul_mat(&grad_dynamics.t().to_owned())
             .add_vec(&T::form_from_array(grad_cost))
             .mul_scalar(-1.0)
     }
@@ -657,6 +691,7 @@ where
     ) -> ModeSchedule
     {
         let d_min = d.iter().cloned().fold(f64::INFINITY, f64::min);
+        // dをプリント
         let old_value = self.evaluate_cost(mode_schedule, &state_schedule0, &self.mode_dynamics_map);
         
         // `get_small_grad_subset` は不要になった
