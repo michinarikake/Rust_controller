@@ -1,4 +1,4 @@
-// use ndarray::{s, Array1};
+use ndarray::Array2;
 // use std::marker::PhantomData;
 
 use crate::domain::state::state_trait::StateVector;
@@ -55,6 +55,7 @@ use crate::domain::force::force_trait::Force;
 
 pub trait InputDefinedDynamics<T: StateVector, U: Force> {
     fn get_input(&self, state: &T, t: f64) -> U;
+    fn set_noise(&mut self, noise_matrix: &Array2<f64>);
 }
 
 // /// **ModeScheduler 用の拡張ダイナミクス**

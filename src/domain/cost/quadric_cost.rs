@@ -5,6 +5,7 @@ use crate::domain::cost::cost_trait::Cost;
 use crate::domain::differentiable::differentiable_trait::Differentiable1d;
 
 /// **LQR の 2 次形式のコスト関数**
+#[derive(Clone)]
 pub struct QuadraticCost {
     q_matrix: Array2<f64>,  // 状態の重み行列 Q
     r_matrix: Array2<f64>,  // 制御入力の重み行列 R

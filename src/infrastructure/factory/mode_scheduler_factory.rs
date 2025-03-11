@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::domain::controller::mode_controller::mode_optimizer::ModeScheduler;
 use crate::domain::force::force_trait::Force;
@@ -8,7 +9,7 @@ use crate::domain::dynamics::propagator::Propagator;
 use crate::infrastructure::factory::simulator_factory::SimulationConfig;
 use crate::domain::controller::mode_controller::mode_optimizer::{ModeId, ModeDynamicsMap, ContinuousDynamicsAndDifferentiable, CostAndDifferentiable};
 use crate::domain::cost::quadric_cost::QuadraticCost;
-use crate::infrastructure::factory::initialization_wrapper::InitializeState;
+// use crate::infrastructure::factory::initialization_wrapper::InitializeState;
 use crate::domain::state::state_converter::StateConverter;
 use crate::infrastructure::settings::mode_shcedule_settings::{CreateInputDefinedDynamics, ModeSchedulerConfig};
 
@@ -23,14 +24,14 @@ pub struct ControllerFactory<T, T2, U, P, D> {
 
 impl<T, T2, U, P, D> ControllerFactory<T, T2, U, P, D>
 where 
-    T: StateVector + Clone + 'static,
-    T2: StateVector + Clone + 'static + StateConverter<T>,
-    U: Force + Clone + 'static,
-    P: Propagator<T, U> + 'static,
-    D: ContinuousDynamicsAndDifferentiable<T, U> + CreateInputDefinedDynamics<U> + 'static,
+    T: StateVector + Clone,
+    T2: StateVector + Clone + StateConverter<T>,
+    U: Force + Clone,
+    P: Propagator<T, U>,
+    D: ContinuousDynamicsAndDifferentiable<T, U> + CreateInputDefinedDynamics<T, U> + 'static,
 {
     /// **27通りの制御入力を考慮した `ModeDynamicsMap` を作成**
-    pub fn create_mode_dynamics_map(simulation_config: &SimulationConfig, config: &ModeSchedulerConfig) -> ModeDynamicsMap<T, U> {
+    pub fn create_mode_dynamics_map<'a>(simulation_config: &'a SimulationConfig, config: &'a ModeSchedulerConfig<T>) -> ModeDynamicsMap<'a, T, U> {
         let mut dynamics_mapping = HashMap::new();
         let mut cost_mapping = HashMap::new();
 
@@ -57,24 +58,42 @@ where
         ModeDynamicsMap::new(dynamics_mapping, cost_mapping)
     }
 
+pub fn create_mode_scheduler(
+    x0_simulator: &T2,
+    simulation_config: &SimulationConfig,
+    config: &ModeSchedulerConfig<T>,
+) -> ModeScheduler<'static, T, U, P> {
+    let mode_dynamics_map = Arc::new(Self::create_mode_dynamics_map(simulation_config, config));
 
-    pub fn create_mode_scheduler(x0_simulator: &T2, simulation_config: &SimulationConfig, config: &ModeSchedulerConfig) -> ModeScheduler<T, U, P> {
-        let mode_dynamics_map = Self::create_mode_dynamics_map(simulation_config, config);
-        let propagator = P::new(std::marker::PhantomData::<(T, U)>);
-        let x0: T = x0_simulator.convert();
+    let propagator = P::new(std::marker::PhantomData::<(T, U)>);
+    let x0: T = x0_simulator.clone().convert();
 
-        ModeScheduler::new(
-            config.eta,
-            config.alpha,
-            config.beta,
-            config.max_iterations,
-            0,
-            simulation_config.constants.step as usize,
-            x0,
-            mode_dynamics_map.dynamics_mapping,
-            mode_dynamics_map.cost_mapping,
-            propagator,
-            simulation_config.constants.dt,
-        )
-    }
+    ModeScheduler::new(
+        config.eta,
+        config.alpha,
+        config.beta,
+        config.max_iterations,
+        0,
+        simulation_config.constants.step as usize,
+        x0,
+        mode_dynamics_map
+            .dynamics_mapping
+            .iter()
+            .map(|(k, v)| (*k, v.clone_boxed()))
+            .collect(), // clone_boxed を使う
+        mode_dynamics_map
+            .cost_mapping
+            .iter()
+            .map(|(k, v)| (*k, v.clone_boxed()))
+            .collect(),
+        propagator,
+        simulation_config.constants.dt,
+        config.noise_matrix.clone(),
+        config.reset.clone(),
+        config.guard.clone(),
+        config.nabla_reset.clone(),
+        config.nabla_guard.clone(),
+    )
+}
+
 }

@@ -1,12 +1,15 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
+use crate::domain::controller::mode_controller::mode_optimizer::{PassiveModeId, PassiveModeMap};
 use crate::domain::state::state_converter::StateConverter;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::force::force_trait::Force;
 use crate::domain::dynamics::dynamics_trait::ContinuousDynamics;
-use crate::domain::differentiable::differentiable_trait::Differentiable2d;
+use crate::domain::differentiable::differentiable_trait::{Differentiable2d, NumericalDefferential};
 use crate::domain::controller::mode_controller::wrapper::InputDefinedDynamics;
 use crate::infrastructure::factory::simulator_factory::SimulationConfig;
-// use crate::infrastructure::settings::simulation_config::default_pair_simulation_config;
-use ndarray::{Array2, arr2};
+use ndarray::{Array1, Array2, arr2};
 use ndarray_linalg::Inverse;
 use crate::infrastructure::settings::constants::CONSTANTS;
 #[allow(unused_imports)]
@@ -41,14 +44,14 @@ use crate::domain::disturbance::air_drag_disturbance::Surface;
 use ndarray::arr1;
 
 /// **制御入力が固定されたダイナミクス**
-pub trait CreateInputDefinedDynamics<U: Force>
+pub trait CreateInputDefinedDynamics<T:StateVector, U: Force>
 {
-    fn new(control_input: U, config: &ModeSchedulerConfig, simulation_config: &SimulationConfig) -> Self;
+    fn new(control_input: U, config: &ModeSchedulerConfig<T>, simulation_config: &SimulationConfig) -> Self;
 }
 
 
 /// **設定値**
-pub struct ModeSchedulerConfig {
+pub struct ModeSchedulerConfig<T: StateVector> {
     pub eta: f64,
     pub alpha: f64,
     pub beta: f64,
@@ -60,9 +63,15 @@ pub struct ModeSchedulerConfig {
     pub a_matrix: Array2<f64>,
     pub b_matrix: Array2<f64>,
     pub c_matrix: Array2<f64>,
-    pub d_matrix: Array2<f64>,
+    pub d_matrix0: Array2<f64>,
+    pub d_matrix1: Array2<f64>,
     pub f1_matrix: Array2<f64>,
     pub f2_matrix: Array2<f64>,
+    pub noise_matrix:HashMap<PassiveModeId, Array2<f64>>,
+    pub reset:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> T>,
+    pub guard:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> f64>,
+    pub nabla_reset:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>,
+    pub nabla_guard:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array1<f64>>,
 }
 
 // pub type ControllerStateType = PositionVelocityPairStateEci;
@@ -80,12 +89,83 @@ pub type ControllerPropagatorType = RungeKutta4Propagator;
 // pub type ControllerDynamicsType = LinearControlledDynamics;
 pub type ControllerDynamicsType = PositionVelocityCovarianceDynamics;
 
+pub fn reset(state: &ControllerStateType) -> ControllerStateType
+{
+    state.clone()
+}
+
+pub fn guard0to1(state: &ControllerStateType) -> f64{
+    state.get_est_x().get_vector()[1] - 10.0
+}
+
+pub fn guard1to0(state: &ControllerStateType) -> f64{
+    - guard0to1(state)
+}
+
+pub fn nabla_reset(state: &ControllerStateType) -> Array2<f64>{
+    NumericalDefferential::<ControllerStateType, ControllerForceType>::differentiate_numeric(
+        &|x, _| reset(x), 
+                                        state, 
+                                        &ControllerForceType::zeros())
+}
+
+pub fn nabla_guard0to1(state: &ControllerStateType) -> Array1<f64> {
+    NumericalDefferential::<ControllerStateType, ControllerForceType>::differential_numeric_scalar(
+        &|x, _| guard0to1(x),
+        state,
+        &ControllerForceType::zeros(),
+    )
+}
+
+pub fn nabla_guard1to0(state: &ControllerStateType) -> Array1<f64> {
+    NumericalDefferential::<ControllerStateType, ControllerForceType>::differential_numeric_scalar(
+        &|x, _| guard1to0(x),
+        state,
+        &ControllerForceType::zeros(),
+    )
+}
 
 /// **デフォルトの `ModeSchedulerConfig`**
-pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> ModeSchedulerConfig {
+pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> ModeSchedulerConfig<ControllerStateType> {
     let a: f64 = simulation_config.constants.a;
     let n = (CONSTANTS.mu / a.powf(3.0)).powf(0.5);
-    ModeSchedulerConfig {
+
+    let d_matrix0 = arr2(&[
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ]) * 1e-4;
+    let d_matrix1 = arr2(&[
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ]) * 1e-4;
+
+    // PassiveModeMapの定義
+    let passive_mode0 = PassiveModeId::new(0);
+    let passive_mode1 = PassiveModeId::new(1);
+
+    let mut noise_matrix_map: HashMap<PassiveModeId, Array2<f64>> = HashMap::new();
+    noise_matrix_map.insert(passive_mode0.clone(), d_matrix0.clone());
+    noise_matrix_map.insert(passive_mode1.clone(), d_matrix1.clone());
+
+    let mut reset_map: HashMap<(PassiveModeId, PassiveModeId), fn(&ControllerStateType) -> ControllerStateType> = HashMap::new();
+    reset_map.insert((passive_mode0.clone(), passive_mode1.clone()), reset);
+    reset_map.insert((passive_mode1.clone(), passive_mode0.clone()), reset);
+
+    let mut guard_map: HashMap<(PassiveModeId, PassiveModeId), fn(&ControllerStateType) -> f64> = HashMap::new();
+    guard_map.insert((passive_mode0.clone(), passive_mode1.clone()), guard0to1);
+    guard_map.insert((passive_mode1.clone(), passive_mode0.clone()), guard1to0);
+
+    let mut nabla_reset_map: HashMap<(PassiveModeId, PassiveModeId), fn(&ControllerStateType) -> Array2<f64>> = HashMap::new();
+    nabla_reset_map.insert((passive_mode0.clone(), passive_mode1.clone()), nabla_reset);
+    nabla_reset_map.insert((passive_mode1.clone(), passive_mode0.clone()), nabla_reset);
+
+    let mut nabla_guard_map: HashMap<(PassiveModeId, PassiveModeId), fn(&ControllerStateType) -> Array1<f64>> = HashMap::new();
+    nabla_guard_map.insert((passive_mode0.clone(), passive_mode1.clone()), nabla_guard0to1);
+    nabla_guard_map.insert((passive_mode1.clone(), passive_mode0.clone()), nabla_guard1to0);
+
+        ModeSchedulerConfig::<ControllerStateType> {
         eta: 0.9,
         alpha: 0.5,
         beta: 0.5,
@@ -114,11 +194,8 @@ pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> Mo
             [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
         ]),
-        d_matrix: arr2(&[
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-        ]) * 0.0001,
+        d_matrix0,
+        d_matrix1,
         f1_matrix: arr2(&[
             [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
             [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
@@ -135,6 +212,11 @@ pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> Mo
             [0.0, 0.0, 0.0],
             [0.0, 0.0, 0.0],
         ]) * 0.01,
+        noise_matrix:noise_matrix_map,
+        reset: reset_map,
+        guard: guard_map,
+        nabla_reset: nabla_reset_map,
+        nabla_guard: nabla_guard_map,
     }
 }
 
@@ -143,14 +225,15 @@ pub fn default_mode_scheduler_config(simulation_config: &SimulationConfig) -> Mo
 impl StateConverter<PositionVelocityCovarianceStateLvlh> for PositionVelocityPairStateEci {
     fn convert(&self) -> PositionVelocityCovarianceStateLvlh {
         let pos_vec_lvlh: PositionVelocityStateLvlh = self.convert();
-        // 初期の不確かさはとりあえず0
-        let p = Array2::<f64>::zeros((6, 6));
+        // 初期の不確かさは適当
+        let p = Array2::<f64>::eye(6) * 0.000;
         PositionVelocityCovarianceStateLvlh::from_from_states(&pos_vec_lvlh, &pos_vec_lvlh, p)
     }
 }
 
 
 // PositionVelocityCovarianceStateLvlh に対する制御入力定義ダイナミクス
+#[derive(Clone)]
 pub struct PositionVelocityCovarianceDynamics {
     a_mat: Array2<f64>,
     b_mat: Array2<f64>,
@@ -175,14 +258,14 @@ pub struct PositionVelocityCovarianceDynamics {
 // }
 
 #[allow(unused)]
-impl CreateInputDefinedDynamics<Force3dLvlh> for PositionVelocityCovarianceDynamics {
-    fn new(control_input: Force3dLvlh, config: &ModeSchedulerConfig, simulation_config: &SimulationConfig) -> Self {
+impl CreateInputDefinedDynamics<PositionVelocityCovarianceStateLvlh, Force3dLvlh> for PositionVelocityCovarianceDynamics {
+    fn new(control_input: Force3dLvlh, config: &ModeSchedulerConfig<PositionVelocityCovarianceStateLvlh>, simulation_config: &SimulationConfig) -> Self {
         Self 
         { 
             a_mat: config.a_matrix.clone(), 
             b_mat: config.b_matrix.clone(),
             c_mat: config.c_matrix.clone(),
-            d_mat: config.d_matrix.clone(),
+            d_mat: config.d_matrix1.clone(),
             f1_mat: config.f1_matrix.clone(),
             f2_mat: config.f2_matrix.clone(),
             control_input,
@@ -230,21 +313,12 @@ impl ContinuousDynamics<PositionVelocityCovarianceStateLvlh, Force3dLvlh> for Po
 impl Differentiable2d<PositionVelocityCovarianceStateLvlh, Force3dLvlh> for PositionVelocityCovarianceDynamics
 {
     fn differentiate(&self, state: &PositionVelocityCovarianceStateLvlh, _: &Force3dLvlh, _: f64) -> Array2<f64> {
-        let mut numerical_jacobian = Array2::<f64>::zeros((33, 33));
-        let f_original = self.compute_derivative(state, &Force3dLvlh::zeros()); // f(z) の値を取得
-
-        for j in 0..33 {
-            let mut perturbed_z = state.get_vector().clone();
-            perturbed_z[j] += self.epsilon; // 状態を少しずらす
-            let new_state = PositionVelocityCovarianceStateLvlh::form_from_array(perturbed_z); // z + ε に対応する状態量を生成
-
-            let f_perturbed = self.compute_derivative(&new_state, &Force3dLvlh::zeros()); // f(z + ε) を計算
-            let df = (&f_perturbed - &f_original) / self.epsilon; // 数値微分
-
-            numerical_jacobian.column_mut(j).assign(&df.get_vector()); // 列に格納
-        }
-
-        numerical_jacobian
+        NumericalDefferential::<PositionVelocityCovarianceStateLvlh, Force3dLvlh>::differentiate_numeric(
+            &|x, u| self.compute_derivative(x, u),
+            state,
+            &Force3dLvlh::zeros(),
+        )
+        
     }
     // fn differentiate(&self, state: &PositionVelocityCovarianceStateLvlh, _: &Force3dLvlh, _: f64) -> Array2<f64> {
     //     // mu_x_dot = f1
@@ -389,8 +463,8 @@ pub struct LinearControlledDynamics {
 }
 
 #[allow(unused)]
-impl CreateInputDefinedDynamics<Force3dLvlh> for LinearControlledDynamics {
-    fn new(control_input: Force3dLvlh, config: &ModeSchedulerConfig, simulation_config: &SimulationConfig) -> Self {
+impl CreateInputDefinedDynamics<PositionVelocityStateLvlh, Force3dLvlh> for LinearControlledDynamics {
+    fn new(control_input: Force3dLvlh, config: &ModeSchedulerConfig<PositionVelocityStateLvlh>, simulation_config: &SimulationConfig) -> Self {
         Self { a_matrix: config.a_matrix.clone(), b_matrix: config.b_matrix.clone(), control_input }
     }
 }
@@ -420,73 +494,74 @@ impl InputDefinedDynamics<PositionVelocityStateLvlh, Force3dLvlh> for LinearCont
     }
 }
 
-// #[cfg(test)]
-// const EPSILON: f64 = 1e-5;
+#[cfg(test)]
+use crate::infrastructure::settings::simulation_config::default_pair_simulation_config;
+#[cfg(test)]
+const EPSILON: f64 = 1e-5;
 
-// #[cfg(test)]
-// fn numerical_jacobian(
-//     dynamics: &PositionVelocityCovarianceDynamics,
-//     state: &PositionVelocityCovarianceStateLvlh,
-// ) -> Array2<f64> {
-//     let mut numerical_jacobian = Array2::<f64>::zeros((33, 33));
-//     let f_original = dynamics.compute_derivative(state, &Force3dLvlh::zeros()); // f(z) の値を取得
+#[cfg(test)]
+fn numerical_jacobian(
+    dynamics: &PositionVelocityCovarianceDynamics,
+    state: &PositionVelocityCovarianceStateLvlh,
+) -> Array2<f64> {
+    let mut numerical_jacobian = Array2::<f64>::zeros((33, 33));
+    let f_original = dynamics.compute_derivative(state, &Force3dLvlh::zeros()); // f(z) の値を取得
 
-//     for j in 0..33 {
-//         let mut perturbed_z = state.get_vector().clone();
-//         perturbed_z[j] += EPSILON; // 状態を少しずらす
-//         let new_state = PositionVelocityCovarianceStateLvlh::form_from_array(perturbed_z); // z + ε に対応する状態量を生成
+    for j in 0..33 {
+        let mut perturbed_z = state.get_vector().clone();
+        perturbed_z[j] += EPSILON; // 状態を少しずらす
+        let new_state = PositionVelocityCovarianceStateLvlh::form_from_array(perturbed_z); // z + ε に対応する状態量を生成
 
-//         let f_perturbed = dynamics.compute_derivative(&new_state, &Force3dLvlh::zeros()); // f(z + ε) を計算
-//         let df = (&f_perturbed - &f_original) / EPSILON; // 数値微分
+        let f_perturbed = dynamics.compute_derivative(&new_state, &Force3dLvlh::zeros()); // f(z + ε) を計算
+        let df = (&f_perturbed - &f_original) / EPSILON; // 数値微分
 
-//         numerical_jacobian.column_mut(j).assign(&df.get_vector()); // 列に格納
-//     }
+        numerical_jacobian.column_mut(j).assign(&df.get_vector()); // 列に格納
+    }
 
-//     numerical_jacobian
-// }
+    numerical_jacobian
+}
 
-// #[test]
-// fn test_jacobian_accuracy() {
-//     let simulation_config = default_pair_simulation_config();
-//     let config = default_mode_scheduler_config(&simulation_config);
-//     let mu_x0 = arr1(&[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-//     let est_x0 = arr1(&[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-//     let p0 = arr2(&[
-//         [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-//         [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-//         [0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
-//         [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
-//         [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-//         [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-//     ]);
-//     let state = PositionVelocityCovarianceStateLvlh::from_from_states(
-//         &PositionVelocityStateLvlh::form_from_array(mu_x0),
-//         &PositionVelocityStateLvlh::form_from_array(est_x0),
-//         p0,
-//     );
-//     let dynamics = PositionVelocityCovarianceDynamics::new(Force3dLvlh::zeros(), &config, &simulation_config);
+#[test]
+fn test_jacobian_accuracy() {
+    let simulation_config = default_pair_simulation_config();
+    let config = default_mode_scheduler_config(&simulation_config);
+    let mu_x0 = arr1(&[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    let est_x0 = arr1(&[1.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+    let p0 = arr2(&[
+        [1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+    ]);
+    let state = PositionVelocityCovarianceStateLvlh::from_from_states(
+        &PositionVelocityStateLvlh::form_from_array(mu_x0),
+        &PositionVelocityStateLvlh::form_from_array(est_x0),
+        p0,
+    );
+    let dynamics = PositionVelocityCovarianceDynamics::new(Force3dLvlh::zeros(), &config, &simulation_config);
 
-//     let analytical_jacobian = dynamics.differentiate(&state, &Force3dLvlh::zeros(), 0.0);
-//     let numerical_jacobian = numerical_jacobian(&dynamics, &state);
-//     // すべての要素を省略せずに表示
-//     // for i in 0..33 {
-//     //     for j in 0..33 {
-//     //         println!("({}, {}), numerical: {}, analitical: {}", i, j, numerical_jacobian[[i, j]], analytical_jacobian[[i, j]]);
-//     //     }
-//     // }
+    let analytical_jacobian = dynamics.differentiate(&state, &Force3dLvlh::zeros(), 0.0);
+    let numerical_jacobian = numerical_jacobian(&dynamics, &state);
+    for i in 0..33 {
+        for j in 0..33 {
+            println!("({}, {}), numerical: {}, analitical: {}", i, j, numerical_jacobian[[i, j]], analytical_jacobian[[i, j]]);
+        }
+    }
 
-//     // 誤差が1e-3以上のものを表示
-//     for i in 0..33 {
-//         for j in 0..33 {
-//             if (numerical_jacobian[[i, j]] - analytical_jacobian[[i, j]]).abs() > 1e-3 {
-//                 println!("({}, {}), numerical: {}, analitical: {}", i, j, numerical_jacobian[[i, j]], analytical_jacobian[[i, j]]);
-//             }
-//         }
-//     }
+    // 誤差が1e-3以上のものを表示
+    for i in 0..33 {
+        for j in 0..33 {
+            if (numerical_jacobian[[i, j]] - analytical_jacobian[[i, j]]).abs() > 1e-3 {
+                println!("({}, {}), numerical: {}, analitical: {}", i, j, numerical_jacobian[[i, j]], analytical_jacobian[[i, j]]);
+            }
+        }
+    }
 
-//     let error = &analytical_jacobian - &numerical_jacobian;
-//     let max_error = error.iter().map(|x| x.abs()).fold(0.0, f64::max);
+    let error = &analytical_jacobian - &numerical_jacobian;
+    let max_error = error.iter().map(|x| x.abs()).fold(0.0, f64::max);
 
-//     println!("Max error: {:.6e}", max_error);
-//     assert!(max_error < 1e-3, "Jacobian computation may be incorrect!");
-// }
+    println!("Max error: {:.6e}", max_error);
+    assert!(max_error < 1e-3, "Jacobian computation may be incorrect!");
+}

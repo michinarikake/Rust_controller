@@ -3,6 +3,7 @@ use core::f64;
 use std::collections::HashMap;
 use crate::domain::controller::controller_trait::Controller;
 use crate::domain::force::force_trait::Force;
+use crate::domain::state;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::cost::cost_trait::Cost;
 use crate::domain::dynamics::propagator::Propagator;
@@ -39,6 +40,7 @@ where
 {
     fn as_continuous_dynamics(&self) -> &dyn ContinuousDynamics<T, U>;
     fn as_mut(&mut self) -> &mut dyn InputDefinedDynamicsCoutinuous<T, U>;
+    fn clone_boxed(&self) -> Box<dyn ContinuousDynamicsAndDifferentiable<T, U>>;
 }
 
 pub trait InputDefinedDynamicsCoutinuous<T, U>: ContinuousDynamics<T, U> + InputDefinedDynamics<T, U>
@@ -64,7 +66,7 @@ impl<T, U, D> ContinuousDynamicsAndDifferentiable<T, U> for D
 where
     T: StateVector,
     U: Force,
-    D: ContinuousDynamics<T, U> + Differentiable2d<T, U> + InputDefinedDynamics<T, U>,
+    D: ContinuousDynamics<T, U> + Differentiable2d<T, U> + InputDefinedDynamics<T, U> + 'static + Clone + Send + Sync,
 {
     fn as_continuous_dynamics(&self) -> &dyn ContinuousDynamics<T, U> {
         self
@@ -73,15 +75,18 @@ where
     fn as_mut(&mut self) -> &mut (dyn InputDefinedDynamicsCoutinuous<T, U>) {
         self
     }
+
+    fn clone_boxed(&self) -> Box<dyn ContinuousDynamicsAndDifferentiable<T, U>> {
+        Box::new(self.clone())
+    }
 }
-
-
 
 pub trait CostAndDifferentiable<T, U>: Cost<T, U> + Differentiable1d<T, U> 
 where
     T: StateVector,
     U: Force,
 {
+    fn clone_boxed(&self) -> Box<dyn CostAndDifferentiable<T, U>>;
     fn as_cost(&self) -> &dyn Cost<T, U>;
 }
 
@@ -89,10 +94,13 @@ impl<T, U, C> CostAndDifferentiable<T, U> for C
 where
     T: StateVector,
     U: Force,
-    C: Cost<T, U> + Differentiable1d<T, U>,
+    C: Cost<T, U> + Differentiable1d<T, U> + 'static + Clone + Send + Sync,
 {
     fn as_cost(&self) -> &dyn Cost<T, U> {
         self
+    }
+    fn clone_boxed(&self) -> Box<dyn CostAndDifferentiable<T, U>> {
+        Box::new(self.clone())
     }
 }
 
@@ -139,8 +147,9 @@ where
 {
     pub noise_matrix: HashMap<PassiveModeId, Array2<f64>>, // モード -> ダイナミクス
     pub reset: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> T>, // モード -> reset
-    pub guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> bool>, // モード -> guard
-    pub pi: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>, // モード -> pi
+    pub guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> f64>, // モード -> guard, guard<0で遷移
+    pub nabla_reset: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>, // モード -> reset
+    pub nabla_guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array1<f64>>, // モード -> guard
 }
 
 impl<T> PassiveModeMap<T>
@@ -151,16 +160,17 @@ where
     (
         noise_matrix: HashMap<PassiveModeId, Array2<f64>>, 
         reset: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> T>,
-        guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> bool>,
-        pi: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>, // モード -> pi
+        guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> f64>,
+        nabla_reset: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>,
+        nabla_guard: HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array1<f64>>,
     ) -> Self 
     {
-        Self { noise_matrix, reset, guard, pi }
+        Self { noise_matrix, reset, guard, nabla_reset, nabla_guard }
     }
 
     pub fn check_transition(&self, mode_now: PassiveModeId, state: &T) -> PassiveModeId {
         for (mode, guard) in &self.guard {
-            if mode.0 == mode_now && guard(state) {
+            if mode.0 == mode_now && (guard(state) <= 0.0) {
                 return mode.1;
             }
         }
@@ -225,7 +235,7 @@ impl PassiveModeSchedule {
     }
     
     pub fn compare_mode(&self, t_index0: usize, t_index1: usize) -> bool {
-        self.get(t_index0) == self.get(t_index1)
+        self.get(t_index0) != self.get(t_index1)
     }
 }
 
@@ -252,6 +262,27 @@ impl<T: StateVector> StateSchedule<T> {
         let mut vec = Vec::new();
         for t in 0..self.state_schedule.len() {
             vec.push(self.state_schedule[&t].clone());
+        }
+        vec
+    }
+}
+
+pub struct PiSchedule {
+    pi_schedule: HashMap<usize, Array2<f64>>,
+}
+
+impl PiSchedule {
+    pub fn new(pi_schedule: HashMap<usize, Array2<f64>>) -> Self {
+        Self { pi_schedule }
+    }
+    pub fn get(&self, time: usize) -> Option<&Array2<f64>> {
+        self.pi_schedule.get(&time)
+    }
+
+    pub fn to_vec(&self) -> Vec<Array2<f64>> {
+        let mut vec = Vec::new();
+        for t in 0..self.pi_schedule.len() {
+            vec.push(self.pi_schedule[&t].clone());
         }
         vec
     }
@@ -294,13 +325,14 @@ impl StateUpdater {
         propagator: &P,
         dt: f64,
         passive_mode_map: &PassiveModeMap<T>,
-    ) -> (StateSchedule<T>, PassiveModeSchedule)
+    ) -> (StateSchedule<T>, PassiveModeSchedule, PiSchedule)
     where
         T: StateVector,
         U: Force,
         P: Propagator<T, U>,
     {
         let mut states: HashMap<usize, T> = HashMap::new();
+        let mut pi_schedule: HashMap<usize, Array2<f64>> = HashMap::new();
         let t_index_last = mode_schedule.schedule.len();
         let mut passive_mode_schedule = PassiveModeSchedule::new(0, t_index_last, PassiveModeId::new(0));
         let passive_mode0 = passive_mode_map.check_transition(passive_mode_schedule.get(0).unwrap().clone(), x0);
@@ -327,8 +359,18 @@ impl StateUpdater {
             if passive_mode_prev != passive_mode_new {
                 let noise = &passive_mode_map.noise_matrix[&passive_mode_new].clone();
                 let reset = passive_mode_map.reset[&(passive_mode_prev, passive_mode_new)];
-                prev_state = reset(&prev_state);
+                // モード遷移前
+                let f1 = dynamics.compute_derivative(&prev_state, &U::zeros());
+                let nabla_reset = passive_mode_map.nabla_reset[&(passive_mode_prev, passive_mode_new)](&prev_state);
+                let nabla_guard = passive_mode_map.nabla_guard[&(passive_mode_prev, passive_mode_new)](&prev_state);
+                // モード遷移
                 dynamics.set_noise(noise);
+                // モード遷移後
+                let f2 = dynamics.compute_derivative(&prev_state, &U::zeros());
+                let pi = Self::calc_pi(&f1.get_vector(), &f2.get_vector(), &nabla_reset, &nabla_guard);
+                pi_schedule.insert(t_index, pi);
+                // リセットはf2の計算後に行う
+                prev_state = reset(&prev_state);
 
             }
 
@@ -341,8 +383,19 @@ impl StateUpdater {
             states.insert(t_index, new_state);
             passive_mode_schedule.insert(t_index, passive_mode_new)
         }
-        (StateSchedule::new(0, mode_schedule.schedule.len(), &states), passive_mode_schedule)
+        (StateSchedule::new(0, mode_schedule.schedule.len(), &states), 
+        passive_mode_schedule,
+        PiSchedule::new(pi_schedule)
+        )
     }
+
+    fn calc_pi(f1: &Array1<f64>, f2: &Array1<f64>,  nabla_reset: &Array2<f64>, nabla_guard: &Array1<f64>) -> Array2<f64> {
+
+        let eye = Array2::eye(f1.len());
+        // pi = nabla_reset @ (eye - f1 @ nabla_guard.T / (nabla_guard.T @ f1)) + f2 @ nabla_guard.T / (nabla_guard.T @ f1)
+        nabla_reset.dot(&(eye - f1.dot(&nabla_guard.t()) / nabla_guard.t().dot(f1))) + f2.dot(&nabla_guard.t()) / nabla_guard.t().dot(f1)
+    }
+    
 }
 
 /// **随伴変数の更新（逆伝播）を担当**
@@ -353,8 +406,8 @@ impl AdjointVariableUpdater {
         states: &StateSchedule<T>,
         mode_schedule: &ModeSchedule,
         mode_dynamics_map: &ModeDynamicsMap<T, U>,
-        passive_mode_map: &PassiveModeMap<T>,
         passive_mode_schedule: &PassiveModeSchedule,
+        pi_schedule: &PiSchedule,
         dt: f64,
     ) -> AdjointVariableSchedule<T>
     where
@@ -373,11 +426,14 @@ impl AdjointVariableUpdater {
 
         for t_index in (0..t_index_last).rev() {
             let mut p = p_map[&(t_index + 1)].clone();
-            if passive_mode_schedule.compare_mode(t_index, t_index-1){
-                let mode_now = passive_mode_schedule.get(t_index).unwrap();
-                let mode_prev = passive_mode_schedule.get(t_index - 1).unwrap();
-                let pi = passive_mode_map.pi.get(&(mode_now.clone(), mode_prev.clone())).unwrap();
-                p = p.mul_mat(&pi(&states.get(t_index_last).unwrap()) )
+
+            // パッシブモードの遷移を考慮
+            if t_index > 0
+            {
+                if passive_mode_schedule.compare_mode(t_index, t_index - 1){
+                    let pi = pi_schedule.get(t_index).unwrap();
+                    p = p.mul_mat(&pi.t().to_owned());
+                }
             }
             let p_dot = Self::compute_derivative::<T, U>(&p, 
                                                             &states.get(t_index).unwrap(), 
@@ -512,11 +568,12 @@ where
         dt: f64,
         noise_matrix:HashMap<PassiveModeId, Array2<f64>>,
         reset:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> T>,
-        guard:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> bool>,
-        pi:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>     
+        guard:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> f64>,
+        nabla_reset:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array2<f64>>,
+        nabla_guard:HashMap<(PassiveModeId, PassiveModeId), fn(&T) -> Array1<f64>>,
     ) -> Self {
         let mode_dynamics_map = ModeDynamicsMap::new(dynamics_mapping, cost_mapping);
-        let passive_mode_map = PassiveModeMap::new(noise_matrix, reset, guard, pi);
+        let passive_mode_map = PassiveModeMap::new(noise_matrix, reset, guard, nabla_reset, nabla_guard);
         let mut instance = Self { eta, alpha, beta, max_iterations, t_index0, t_index_last, x0: x0.clone(), 
             mode_dynamics_map, passive_mode_map, propagator, dt, mode_schedule: None, optimized_state_schedule: None };
         instance.mode_schedule = Some(instance.optimize());
@@ -526,7 +583,7 @@ where
     pub fn optimize(&mut self) -> ModeSchedule
     {
         let mut mode_schedule = ModeSchedule::new_from_mode0(self.t_index0, self.t_index_last, ModeId::new(0));
-        let (mut state_schedule, mut passive_mode_shcedule) = StateUpdater::new(
+        let (mut state_schedule, mut passive_mode_shcedule, mut pi_schedule) = StateUpdater::new(
             &self.x0, 
             &mode_schedule, 
             &mut self.mode_dynamics_map, 
@@ -538,8 +595,8 @@ where
             &state_schedule, 
             &mode_schedule, 
             &self.mode_dynamics_map, 
-            &self.passive_mode_map, 
             &passive_mode_shcedule, 
+            &pi_schedule,
             self.dt
         );
         let mut old_value = self.evaluate_cost(&mode_schedule, &state_schedule, &self.mode_dynamics_map);
@@ -563,7 +620,7 @@ where
                 )
             };
 
-            (state_schedule, passive_mode_shcedule) = StateUpdater::new(
+            (state_schedule, passive_mode_shcedule, pi_schedule) = StateUpdater::new(
                 &self.x0, 
                 &mode_schedule, 
                 &mut self.mode_dynamics_map, 
@@ -575,8 +632,8 @@ where
                 &state_schedule, 
                 &mode_schedule, 
                 &self.mode_dynamics_map, 
-                &self.passive_mode_map, 
                 &passive_mode_shcedule, 
+                &pi_schedule,
                 self.dt
             );
 
@@ -628,7 +685,7 @@ where
                 new_schedule.insert(t, m);
             }
     
-            let (state_schedule_new, _) = StateUpdater::new(
+            let (state_schedule_new, _, _) = StateUpdater::new(
                  &self.x0,
                  &new_schedule, 
                  &mut self.mode_dynamics_map, 

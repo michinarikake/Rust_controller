@@ -5,7 +5,7 @@ use crate::domain::state::position_velocity_covariance_state_lvlh::PositionVeloc
 use crate::domain::state::orbital_elements::OrbitalElements;
 use crate::domain::state::state_trait::StateVector;
 use crate::domain::math::formulations::Math;
-use ndarray::{arr1, Array2, concatenate, s, Axis};
+use ndarray::{arr1, concatenate, s, Axis};
 use std::f64::consts::PI;
 use crate::infrastructure::settings::constants::CONSTANTS;
 
